@@ -106,6 +106,13 @@ if [[ "${config_spoof_cmdline_or_bootconfig}" == "1" ]]; then
 		cat /proc/bootconfig > "${FAKE_BOOTCONFIG}"
 		sed -i 's/androidboot.warranty_bit = "1"/androidboot.warranty_bit = "0"/' "${FAKE_BOOTCONFIG}"
 		sed -i 's/androidboot.verifiedbootstate = "orange"/androidboot.verifiedbootstate = "green"/' "${FAKE_BOOTCONFIG}"
+		# Optional full-file override. Never source/eval custom content.
+		if [[ "${config_use_custom_cmdline_or_bootconfig}" == "1" && -s "${PERSISTENT_DIR}/custom_bootconfig.txt" ]]; then
+			bytes=$(wc -c < "${PERSISTENT_DIR}/custom_bootconfig.txt")
+			if [[ "${bytes}" =~ ^[0-9]+$ && "${bytes}" -le 8192 ]]; then
+				cp -f "${PERSISTENT_DIR}/custom_bootconfig.txt" "${FAKE_BOOTCONFIG}"
+			fi
+		fi
 		${SUSFS_BIN} set_cmdline_or_bootconfig "${FAKE_BOOTCONFIG}"
 	else
 		FAKE_CMDLINE="${PERSISTENT_DIR}/fake_cmdline"
@@ -113,6 +120,12 @@ if [[ "${config_spoof_cmdline_or_bootconfig}" == "1" ]]; then
 		cat /proc/cmdline > "${FAKE_CMDLINE}"
 		sed -i 's/androidboot.warranty_bit=1/androidboot.warranty_bit=0/' "${FAKE_CMDLINE}"
 		sed -i 's/androidboot.verifiedbootstate=orange/androidboot.verifiedbootstate=green/' "${FAKE_CMDLINE}"
+		if [[ "${config_use_custom_cmdline_or_bootconfig}" == "1" && -s "${PERSISTENT_DIR}/custom_cmdline.txt" ]]; then
+			bytes=$(wc -c < "${PERSISTENT_DIR}/custom_cmdline.txt")
+			if [[ "${bytes}" =~ ^[0-9]+$ && "${bytes}" -le 8192 ]]; then
+				cp -f "${PERSISTENT_DIR}/custom_cmdline.txt" "${FAKE_CMDLINE}"
+			fi
+		fi
 		${SUSFS_BIN} set_cmdline_or_bootconfig "${FAKE_CMDLINE}"
 	fi
 fi
