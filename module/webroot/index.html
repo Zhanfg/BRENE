@@ -647,6 +647,32 @@
 					<div id="brene-kstat-status" class="brene-status" role="status">Checking kernel support…</div>
 					<button id="brene-kstat-save" type="button" disabled>保存规则 / Save</button>
 				</div>
+				<p class="section-label">静态 KSTAT / Static KSTAT</p>
+				<div class="brene-kstat">
+					<strong>12 字段文件元数据规则</strong>
+					<span>每行 13 项，以 | 分隔：绝对路径、ino、dev、nlink、size、atime、atime_nsec、mtime、mtime_nsec、ctime、ctime_nsec、blocks、blksize。值为非负整数或 default。仅在重启后、已存在的文件上应用。</span>
+					<label for="brene-static-kstat-rules">静态规则 / Static rules</label>
+					<textarea id="brene-static-kstat-rules" spellcheck="false" placeholder="/system/etc/hosts|default|default|default|default|default|default|default|default|default|default|default|default"></textarea>
+					<div id="brene-static-kstat-status" class="brene-status" role="status">Checking kernel support…</div>
+					<button id="brene-static-kstat-save" type="button" disabled>保存静态规则 / Save</button>
+				</div>
+				<p class="section-label">Cmdline / Bootconfig</p>
+				<div class="brene-kstat">
+					<strong>自定义启动参数视图 / Custom boot arguments</strong>
+					<span>高级功能：完整替代内容，不是增量参数。必须同时开启上方原有“Cmdline/Bootconfig spoofing”及下面的自定义开关；两者默认关闭。不要删除未知参数。</span>
+					<div class="card-row"><div class="card-row__body">
+						<span class="card-row__title">启用自定义内容 / Enable full-file override</span>
+					</div><md-switch icons id="use_custom_cmdline_or_bootconfig"></md-switch></div>
+					<label for="brene-boot-payload">替代内容 / Replacement content</label>
+					<textarea id="brene-boot-payload" spellcheck="false" placeholder="建议先复制设备当前 /proc/cmdline 或 /proc/bootconfig 的内容"></textarea>
+					<div id="brene-boot-status" class="brene-status" role="status">Checking kernel support…</div>
+					<button id="brene-boot-save" type="button" disabled>保存启动参数 / Save</button>
+				</div>
+				<p class="section-label">内核功能矩阵 / Kernel features</p>
+				<div class="brene-kstat">
+					<div id="brene-feature-matrix" class="brene-status" role="status">正在查询内核功能…</div>
+					<span>“已编译”仅来自内核报告，不代表规则已经生效，也不代表设备通过完整性验证。</span>
+				</div>
 			</section>
 
 			<section class="tab-panel" data-panel="rom">
