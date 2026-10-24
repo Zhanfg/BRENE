@@ -5,6 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>BRENE</title>
 		<link rel="stylesheet" href="./styles.css" type="text/css" />
+		<link rel="stylesheet" href="./modern.css" type="text/css" />
 	</head>
 
 	<body class="body-content">
@@ -637,6 +638,15 @@
 						</div>
 					</div>
 				</div>
+				<p class="section-label">SUS_KSTAT · Advanced</p>
+				<div class="brene-kstat">
+					<strong>动态 KSTAT 规则 / Dynamic KSTAT</strong>
+					<span>每行一条：/system/etc/hosts|update 或 /system/etc/hosts|clone。仅在内核启用 SUS_KSTAT 时写入；重启生效。首次记录在 early boot，更新在 boot-completed，因此无法覆盖更早发生的挂载操作。</span>
+					<label for="brene-kstat-rules">规则列表 / Rules</label>
+					<textarea id="brene-kstat-rules" spellcheck="false" placeholder="/system/etc/hosts|update"></textarea>
+					<div id="brene-kstat-status" class="brene-status" role="status">Checking kernel support…</div>
+					<button id="brene-kstat-save" type="button" disabled>保存规则 / Save</button>
+				</div>
 			</section>
 
 			<section class="tab-panel" data-panel="rom">
@@ -852,5 +862,7 @@
 		</div>
 
 		<script type="module" src="./script.js"></script>
+		<script type="module" src="./kstat-ui.js"></script>
+		<script type="module" src="./locale.js"></script>
 	</body>
 </html>
