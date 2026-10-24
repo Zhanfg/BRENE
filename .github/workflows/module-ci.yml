@@ -1,0 +1,52 @@
+name: BRENE module CI
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Shell syntax
+        run: |
+          set -e
+          for file in module/*.sh; do bash -n "$file"; done
+          sh -n module/kstat-rules.sh
+      - name: Check WebUI JavaScript syntax
+        run: |
+          set -e
+          node --check module/webroot/script.js
+          node --check module/webroot/locale.js
+          node --check module/webroot/kstat-ui.js
+      - name: Verify WebUI and KSTAT wiring
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('module')
+          page=(root/'webroot/index.html').read_text()
+          js=(root/'webroot/script.js').read_text()
+          for x in ('modern.css','locale.js','kstat-ui.js','brene-kstat-rules','brene-kstat-save'):
+              assert x in page, f'Missing WebUI control: {x}'
+          assert 'UNIQUE_EOF' not in js, 'Unsafe heredoc found'
+          for name in ('post-fs-data.sh','boot-completed.sh'):
+              assert 'kstat-rules.sh' in (root/name).read_text()
+          assert 'custom_sus_kstat.txt' in (root/'customize.sh').read_text()
+          print('WebUI/KSTAT integration checks passed')
+          PY
+      - name: Build module ZIP
+        run: |
+          cd module
+          zip -q -r ../BRENE-SuSFS-dev.zip .
+          cd ..
+          unzip -t BRENE-SuSFS-dev.zip | tail -n 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BRENE-SuSFS-dev
+          path: BRENE-SuSFS-dev.zip
+          if-no-files-found: error
