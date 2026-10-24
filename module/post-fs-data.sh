@@ -23,6 +23,12 @@ ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/ksu_susfs" # For compatibility
 true > "${PERSISTENT_DIR}/log.txt"
 true > "${PERSISTENT_DIR}/logs.txt"
 
+# User-defined KSTAT snapshots must be recorded before later module mounts.
+# Rules are optional and feature-gated; no change when the list is empty.
+if [[ -f "${MODDIR}/kstat-rules.sh" ]]; then
+	/system/bin/sh "${MODDIR}/kstat-rules.sh" pre
+fi
+
 ## Important Notes:
 ## - The following command can be run at other stages like service.sh, boot-completed.sh etc..,
 ## - This module is just an demo showing how to use ksu_susfs tool to commuicate with kernel
