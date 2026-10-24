@@ -91,6 +91,9 @@ custom_sus_path.txt
 custom_sus_path_loop.txt
 custom_open_redirect.txt
 custom_sus_kstat.txt
+custom_static_kstat.txt
+custom_cmdline.txt
+custom_bootconfig.txt
 "
 for file in ${files}; do
 	if [[ ! -f "${PERSISTENT_DIR}/${file}" ]]; then
