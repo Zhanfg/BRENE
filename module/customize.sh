@@ -37,19 +37,33 @@ if [[ ! -d "${DEST_BIN_DIR}" ]]; then
 	abort "[❌] '${DEST_BIN_DIR}' not existed, installation aborted!"
 fi
 
-cp -f "${MODPATH}/tools/susfs" "${DEST_BIN_DIR}"
-chmod +x "${MODPATH}/inotify.sh"
-chmod +x "${MODPATH}/remove_ksu_directory.sh"
-chmod 755 "${DEST_BIN_DIR}/susfs"
-ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/sus"       # For development
-ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/ksu_susfs" # For compatibility
-
-susfs_version=$(${SUSFS_BIN} show version)
-if [[ "${susfs_version}" == "v2"* ]]; then
-	echo "[✅] Detected SuSFS version: ${susfs_version}"
+# Probe with the bundled tool before replacing a shared binary.
+chmod 755 "${MODPATH}/tools/susfs"
+susfs_version=$("${MODPATH}/tools/susfs" show version 2>/dev/null)
+if [[ "${susfs_version}" == "v2."* ]]; then
+    echo "[✅] Detected SuSFS version: ${susfs_version}"
 else
-	abort "[❌] Not supported SuSFS version ${susfs_version}!"
+    abort "[❌] Bundled SuSFS tool cannot communicate with this kernel: ${susfs_version:-unknown}"
 fi
+
+mkdir -p "${PERSISTENT_DIR}" || abort '[❌] Cannot prepare persistent directory'
+# Preserve the previous shared binary on first installation, not on later upgrades.
+if [[ -f "${DEST_BIN_DIR}/susfs" && ! -f "${PERSISTENT_DIR}/susfs.previous" ]]; then
+    if [[ -f "${PERSISTENT_DIR}/susfs" ]] && cmp -s "${DEST_BIN_DIR}/susfs" "${PERSISTENT_DIR}/susfs"; then
+        echo '[ℹ️] Existing binary is already managed by BRENE'
+    else
+        cp -pf "${DEST_BIN_DIR}/susfs" "${PERSISTENT_DIR}/susfs.previous" ||
+            abort '[❌] Failed to preserve existing SuSFS binary'
+    fi
+fi
+cp -pf "${MODPATH}/tools/susfs" "${PERSISTENT_DIR}/susfs" ||
+    abort '[❌] Failed to cache BRENE SuSFS binary'
+cp -f "${MODPATH}/tools/susfs" "${DEST_BIN_DIR}/susfs" ||
+    abort '[❌] Failed to install BRENE SuSFS binary'
+chmod 755 "${DEST_BIN_DIR}/susfs"
+chmod +x "${MODPATH}/inotify.sh" "${MODPATH}/remove_ksu_directory.sh" "${MODPATH}/kstat-rules.sh"
+ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/sus"
+ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/ksu_susfs"
 
 # Reset module description
 susfs_total_features="kernel-defined"
@@ -69,9 +83,6 @@ ${KSU_BIN} module config set override.description "[Status: ${status} | Kernel V
 
 echo "[✅] Preparing brene persistent directory (${PERSISTENT_DIR})"
 mkdir -p "${PERSISTENT_DIR}"
-
-# Backup SuSFS binary
-cp -pf "${DEST_BIN_DIR}/susfs" "${PERSISTENT_DIR}"
 
 files="
 custom_sus_map.txt
