@@ -71,8 +71,12 @@ async function init() {
   const flags = features.errno === 0 ? features.stdout : ''
   const kstat = features.errno === 0 && active(flags,'SUS_KSTAT')
   const cmdline = features.errno === 0 && active(flags,'SPOOF_CMDLINE_OR_BOOTCONFIG')
-  const isGki = variant.errno === 0 && variant.stdout.trim() === 'GKI'
+  const variantName = variant.errno === 0 ? variant.stdout.trim() : ''
+  const knownVariant = variantName.length > 0
+  const isGki = variantName === 'GKI'
   const mode = isGki ? 'Bootconfig / GKI' : 'Cmdline / non-GKI'
+  const customToggle = el('use_custom_cmdline_or_bootconfig')
+  if (customToggle) customToggle.disabled = !cmdline || !knownVariant
   const grid = el('brene-feature-matrix')
   if (grid) {
     const header = 'SuSFS: ' + (version.errno === 0 ? version.stdout.trim() : 'unknown') +
@@ -87,7 +91,7 @@ async function init() {
     {field:'brene-static-kstat-rules',button:'brene-static-kstat-save',state:'brene-static-kstat-status',
      file:'custom_static_kstat.txt',enabled:kstat,validate:validateStatic},
     {field:'brene-boot-payload',button:'brene-boot-save',state:'brene-boot-status',
-     file:isGki?'custom_bootconfig.txt':'custom_cmdline.txt',enabled:cmdline,
+     file:isGki?'custom_bootconfig.txt':'custom_cmdline.txt',enabled:cmdline && knownVariant,
      validate:text=>validateBoot(text,isGki)}
   ]
   for (const panel of panels) {
