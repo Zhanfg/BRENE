@@ -311,7 +311,7 @@ function updateConfig(config, value) {
 // TEMP
 // Helper function to update config
 function updateConfig2(config, value) {
- if (!/^[a-z_]+$/.test(config) || !/^[A-Za-z0-9._+:\\/@#, -]{0,128}$/.test(value)) {
+ if (!/^[a-z_]+$/.test(config) || !/^[A-Za-z0-9._+:@#, -]{0,128}$/.test(value)) {
   toast('Invalid config value')
   return
  }
@@ -319,11 +319,6 @@ function updateConfig2(config, value) {
  const sedExpr = `s|^${config}=.*|${config}='${escaped}'|`
  exec(`sed -i ${shellQuote(sedExpr)} ${shellQuote(PERSISTENT_DIR+'/config.sh')}`).then(result => {
   if(result.errno !== 0) toast('Failed to update config')
- })
-}')
- const sedExpr = `s|^${config}=.*|${config}='${escaped}'|`
- exec(`sed -i ${shellQuote(sedExpr)} ${shellQuote(PERSISTENT_DIR+'/config.sh')}`).then((result)=>{
-   if(result.errno!==0)toast('Failed to update config')
  })
 }
 
