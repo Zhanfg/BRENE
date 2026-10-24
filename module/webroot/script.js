@@ -384,25 +384,30 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 	openButton.addEventListener('click', () => {
 		dialog.show()
 	})
-	dialog.addEventListener('close', () => {
-		if (dialog.returnValue === 'confirm') {
-			exec(`
-				cp -f ${MODDIR}/config.sh ${PERSISTENT_DIR}
-			`).then((result) => {
-				configs.forEach((config) => {
-					const configId = `config_${config.id}`
-					const element = document.getElementById(config.id)
-					if (!element) return
-
-					const value = configValues[configId]
-					if (value !== undefined) {
-						element.selected = parseInt(value) === 1
-					}
-				})
-
-				toast(result.errno === 0 ? 'Success' : result.stderr)
-			})
-		}
+	dialog.addEventListener('close', async () => {
+		if (dialog.returnValue !== 'confirm') return
+		const result = await exec(`cp -f ${MODDIR}/config.sh ${PERSISTENT_DIR}/config.sh`)
+		if (result.errno !== 0) { toast(result.stderr || 'Reset failed'); return }
+		const defaults = await exec(`cat ${PERSISTENT_DIR}/config.sh`)
+		if (defaults.errno !== 0) { toast('Cannot reload defaults'); return }
+		const newValues = Object.fromEntries(defaults.stdout.split('\n')
+			.filter(line => /^config_[a-z_]+=/.test(line))
+			.map(line => {
+				const pos = line.indexOf('=')
+				return [line.slice(0,pos), line.slice(pos+1).trim().replace(/^['"](.*)['"]$/, '$1')]
+			}))
+		configs.forEach(config => {
+			const element = document.getElementById(config.id)
+			const value = newValues['config_'+config.id]
+			if (element && value !== undefined) element.selected = Number(value) === 1
+		})
+		const release = document.getElementById('custom_uname_release')
+		const version = document.getElementById('custom_uname_version')
+		const digest = document.getElementById('vbh_text_field')
+		if(release) release.value = newValues.config_custom_uname_kernel_release || 'default'
+		if(version) version.value = newValues.config_custom_uname_kernel_version || 'default'
+		if(digest) digest.value = newValues.config_spoof_verified_boot_hash || ''
+		toast('Defaults restored; reboot to apply')
 	})
 })
 
