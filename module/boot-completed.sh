@@ -428,6 +428,7 @@ fi
 # Refresh previously registered dynamic KSTAT rules after module mounts.
 if [[ -f "${MODDIR}/kstat-rules.sh" ]]; then
 	/system/bin/sh "${MODDIR}/kstat-rules.sh" post
+	/system/bin/sh "${MODDIR}/kstat-rules.sh" static
 fi
 
 resetprop -c --force
