@@ -18,6 +18,8 @@ jobs:
           set -e
           for file in module/*.sh; do bash -n "$file"; done
           sh -n module/kstat-rules.sh
+      - name: KSTAT parser dry-run tests
+        run: sh tests/test-kstat.sh
       - name: Check WebUI JavaScript syntax
         run: |
           set -e
@@ -37,6 +39,15 @@ jobs:
           for name in ('post-fs-data.sh','boot-completed.sh'):
               assert 'kstat-rules.sh' in (root/name).read_text()
           assert 'custom_sus_kstat.txt' in (root/'customize.sh').read_text()
+          assert 'custom_static_kstat.txt' in (root/'customize.sh').read_text()
+          assert 'config_use_custom_cmdline_or_bootconfig=0' in (root/'config.sh').read_text()
+          assert 'susfs.previous' in (root/'customize.sh').read_text()
+          assert 'susfs.previous' in (root/'uninstall.sh').read_text()
+          for x in ('brene-static-kstat-save','brene-boot-save','brene-feature-matrix'):
+              assert x in page, f'Missing advanced control: {x}'
+          source=(root/'webroot/kstat-ui.js').read_text()
+          for command in ('custom_static_kstat.txt','custom_cmdline.txt','custom_bootconfig.txt'):
+              assert command in source
           print('WebUI/KSTAT integration checks passed')
           PY
       - name: Build module ZIP
