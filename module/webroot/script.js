@@ -88,7 +88,7 @@ const configs = [
 document.querySelectorAll('a[href]').forEach((element) => {
 	element.addEventListener('click', (event) => {
 		event.preventDefault()
-		exec(`am start -a android.intent.action.VIEW -d ${element.href}`)
+		if (element.href.startsWith('https://') || element.href.startsWith('http://')) exec(`am start -a android.intent.action.VIEW -d ${shellQuote(element.href)}`)
 	})
 })
 
@@ -287,6 +287,21 @@ exec('susfs show version').then((result) => {
 })
 
 // Helper function to update config
+// Never put WebUI text directly inside a shell program or here-document.
+function shellQuote(input) {
+ return "'" + String(input).replace(/'/g, "'\\''") + "'"
+}
+function safeSaveTextFile(filename, content) {
+ const allowed = new Set(['custom_sus_map.txt','custom_sus_path.txt','custom_sus_path_loop.txt',
+  'custom_open_redirect.txt','custom_kernel_umount.txt'])
+ if(!allowed.has(filename)) return Promise.resolve({errno:1,stderr:'Invalid target'})
+ const bytes = new TextEncoder().encode(content)
+ if(bytes.length > 65536) return Promise.resolve({errno:1,stderr:'Too much text (64 KiB limit)'})
+ let binary=''
+ for(const byte of bytes) binary+=String.fromCharCode(byte)
+ const base64=btoa(binary)
+ return exec(`printf '%s' ${shellQuote(base64)} | base64 -d > ${shellQuote(PERSISTENT_DIR+'/'+filename)}`)
+}
 function updateConfig(config, value) {
 	exec(`sed -i "s/^${config}=.*/${config}=${value}/" ${PERSISTENT_DIR}/config.sh`).then((result) => {
 		if (result.errno !== 0) toast('Failed to update config')
@@ -296,9 +311,18 @@ function updateConfig(config, value) {
 // TEMP
 // Helper function to update config
 function updateConfig2(config, value) {
+ if (!/^[a-z_]+$/.test(config) || !/^[A-Za-z0-9._+:\\/@#, -]{0,128}$/.test(value)) {
+  toast('Invalid config value'); return
+ }
+ const escaped = value.replace(/[\\&|]/g, '\\function updateConfig2(config, value) {
 	exec(`sed -i "s/^${config}=.*/${config}='${value}'/" ${PERSISTENT_DIR}/config.sh`).then((result) => {
 		if (result.errno !== 0) toast('Failed to update config')
 	})
+}')
+ const sedExpr = `s|^${config}=.*|${config}='${escaped}'|`
+ exec(`sed -i ${shellQuote(sedExpr)} ${shellQuote(PERSISTENT_DIR+'/config.sh')}`).then((result)=>{
+   if(result.errno!==0)toast('Failed to update config')
+ })
 }
 
 // Helper function to set config immedialtely that no need to reboot
@@ -412,7 +436,7 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 	const updateUname = (release, version) => {
 		updateConfig2('config_custom_uname_kernel_release', release)
 		updateConfig2('config_custom_uname_kernel_version', version)
-		setFeature(`susfs set_uname "${release}" "${version}"`)
+		setFeature(`susfs set_uname ${shellQuote(release)} ${shellQuote(version)}`)
 	}
 
 	// Apply
@@ -436,9 +460,11 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 	const textField = document.getElementById('vbh_text_field')
 
 	button.addEventListener('click', () => {
-		updateConfig2('config_spoof_verified_boot_hash', textField.value)
+		const digest = textField.value.trim()
+  if (!/^[0-9a-fA-F]{64}$/.test(digest)) { toast('Expected a 64-character hexadecimal digest'); return }
+  updateConfig2('config_spoof_verified_boot_hash', digest)
 
-		exec(`resetprop -n ro.boot.vbmeta.digest ${textField.value}`).then((result) => {
+		exec(`resetprop -n ro.boot.vbmeta.digest ${shellQuote(digest)}`).then((result) => {
 			if (result.errno === 0) {
 				toast('No need to reboot')
 			} else {
@@ -528,17 +554,13 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 
 		if (file) {
 			if (content === '') {
-				exec(`printf '' > ${PERSISTENT_DIR}/${file}`).then((result) => {
+				safeSaveTextFile(file, '').then((result) => {
 					toast(result.errno === 0 ? 'Success, reboot to apply' : result.stderr)
 				})
 			} else {
 				content = content.replaceAll('/sdcard', '/storage/emulated/0')
 
-				exec(`
-cat <<'UNIQUE_EOF' > ${PERSISTENT_DIR}/${file}
-${content}
-UNIQUE_EOF
-				`).then((result) => {
+				safeSaveTextFile(file, content).then((result) => {
 					toast(result.errno === 0 ? 'Success, reboot to apply' : result.stderr)
 				})
 			}
@@ -562,15 +584,11 @@ UNIQUE_EOF
 
 		if (file) {
 			if (content === '') {
-				exec(`printf '' > ${PERSISTENT_DIR}/${file}`).then((result) => {
+				safeSaveTextFile(file, '').then((result) => {
 					toast(result.errno === 0 ? 'Success' : result.stderr)
 				})
 			} else {
-				exec(`
-cat <<'UNIQUE_EOF' > ${PERSISTENT_DIR}/${file}
-${content}
-UNIQUE_EOF
-				`).then((result) => {
+				safeSaveTextFile(file, content).then((result) => {
 					toast(result.errno === 0 ? 'Success' : result.stderr)
 				})
 			}
