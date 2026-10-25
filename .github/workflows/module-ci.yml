@@ -19,6 +19,9 @@ jobs:
           for file in module/*.sh; do bash -n "$file"; done
           sh -n module/kstat-rules.sh
           sh -n module/autoshield.sh
+          sh -n module/tools/duck-evidence-audit.sh
+      - name: Read-only Duck Detector evidence regression
+        run: sh tests/test-duck-evidence.sh
       - name: AutoShield discovery / apply dry-run tests
         run: sh tests/test-autoshield.sh
       - name: KSTAT parser dry-run tests
