@@ -20,8 +20,20 @@ jobs:
           sh -n module/kstat-rules.sh
           sh -n module/autoshield.sh
           sh -n module/tools/duck-evidence-audit.sh
+          sh -n module/tools/duck-evidence-watch.sh
       - name: Read-only Duck Detector evidence regression
         run: sh tests/test-duck-evidence.sh
+      - name: DuckDetector capture timeout and lock cleanup
+        run: |
+          set -e
+          T=$(mktemp -d)
+          trap 'rm -rf "$T"' EXIT
+          if BRENE_WATCH_BASE="$T" BRENE_WATCH_LIMIT=1 sh module/tools/duck-evidence-watch.sh; then
+            echo "Unexpected detector capture succeeded in CI" >&2
+            exit 1
+          fi
+          grep -q '采集超时' "$T/duck-watch.status"
+          test ! -d "$T/.duck-watch.lock"
       - name: AutoShield discovery / apply dry-run tests
         run: sh tests/test-autoshield.sh
       - name: KSTAT parser dry-run tests
@@ -56,6 +68,8 @@ jobs:
           assert 'config_auto_hide=0' in (root/'config.sh').read_text()
           assert 'autoshield.sh' in (root/'boot-completed.sh').read_text()
           assert 'diagnostics.js' in page and 'navigation.js' in page
+          assert 'duck-watch-button' in page
+          assert 'duck-evidence-watch.sh' in (root/'webroot/diagnostics.js').read_text()
           assert 'suspicious_mounts' in page and 'mount_summary' in page
           assert 'SWIPE_THRESHOLD' not in js
           assert 'cat /proc/1/mountinfo | grep' not in js
