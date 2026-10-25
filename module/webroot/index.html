@@ -638,6 +638,19 @@
 						</div>
 					</div>
 				</div>
+				<p class="section-label">AutoShield · 自动规则管理</p>
+				<div class="brene-kstat" id="brene-autoshield-panel">
+					<strong>自动发现模块映射路径</strong>
+					<span>扫描已启用模块中 Zygisk 的原生 .so 文件，生成 SUS_MAP 候选清单。默认只预览，不隐藏，不删除文件。开启自动应用后，每次启动仅尝试应用内核支持的规则。</span>
+					<div id="brene-auto-status" class="brene-status" role="status">正在读取 AutoShield 状态…</div>
+					<pre id="brene-auto-candidates" class="mono-block enabled-config">尚未扫描</pre>
+					<div class="brene-autoshield-actions">
+						<button type="button" id="brene-auto-scan">扫描与预览</button>
+						<button type="button" id="brene-auto-enable">启用并应用</button>
+						<button type="button" id="brene-auto-disable">关闭自动应用</button>
+					</div>
+					<span>仅对符合条件的映射文件生成规则；并不保证所有模块痕迹都能隐藏。关闭后不再自动添加规则，已有内核规则必须重启才能清除。</span>
+				</div>
 				<p class="section-label">SUS_KSTAT · Advanced</p>
 				<div class="brene-kstat">
 					<strong>动态 KSTAT 规则 / Dynamic KSTAT</strong>
@@ -889,6 +902,7 @@
 
 		<script type="module" src="./script.js"></script>
 		<script type="module" src="./kstat-ui.js"></script>
+		<script type="module" src="./autoshield-ui.js"></script>
 		<script type="module" src="./locale.js"></script>
 	</body>
 </html>
