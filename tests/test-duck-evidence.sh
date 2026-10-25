@@ -19,7 +19,9 @@ Swap:                  0 kB
 EOF
 cat > "$T/mountinfo" <<'EOF'
 123 11 0:1 / /system ro - overlay overlay rw
-124 11 0:2 / /vendor ro - ext4 /dev/block/dm-1 ro
+124 11 0:2 / /vendor ro - erofs /dev/block/dm-1 ro
+125 11 0:3 / /product/app ro - overlay overlay ro,lowerdir=/my_region/app:/my_product/app:/product/app
+126 11 0:4 / /system_ext/framework/oplusex/com.oplus.Test ro - overlay overlay ro,lowerdir=/mnt/opex/com.oplus.Test/javalib:/system_ext/framework/oplusex/com.oplus.Test
 EOF
 BRENE_AUDIT_OUTPUT_DIR="$T" \
 BRENE_AUDIT_SMAPS="$T/smaps" \
@@ -36,6 +38,10 @@ if grep -q 'injected.so' "$REPORT"; then
  echo "Non-system path should be excluded"; exit 1
 fi
 grep -q 'overlay overlay rw' "$REPORT"
-grep -q 'Relevant mountinfo entries: 2' "$REPORT"
+grep -q 'Overlays total=3 OPlus-like=2 unclassified=1' "$REPORT"
+grep -q 'Exact /system mount type=overlay /vendor mount type=erofs' "$REPORT"
+grep -q 'Mountinfo source: explicit diagnostic fixture' "$REPORT"
+grep -q 'OPlus-like candidate (NOT VERIFIED)' "$REPORT"
+grep -q 'Unclassified candidate (REVIEW)' "$REPORT"
 grep -q 'No modules, kernel hooks, mount rules' "$REPORT"
 echo 'Duck evidence audit fixture checks passed'
