@@ -262,3 +262,17 @@ md-switch { scale: .96; transform-origin: right center; }
   .tab-panel { animation: none; }
   .tab-btn { transition: none; }
 }
+
+/* AutoShield management: Duck-inspired secondary action group */
+.brene-autoshield-actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.brene-autoshield-actions button{flex:1 1 135px;min-width:0;text-align:center}
+.brene-autoshield-actions #brene-auto-scan{
+  background:var(--md-sys-color-primary-container);
+  color:var(--md-sys-color-on-primary-container);
+}
+.brene-autoshield-actions #brene-auto-disable{
+  background:transparent;color:var(--brene-text);
+  box-shadow:inset 0 0 0 1px var(--brene-border);
+}
+#brene-auto-candidates{max-height:190px;overflow:auto;font-size:12px}
+@media(max-width:360px){.brene-autoshield-actions{flex-direction:column;align-items:stretch}.brene-autoshield-actions button{flex:auto;width:100%}}
