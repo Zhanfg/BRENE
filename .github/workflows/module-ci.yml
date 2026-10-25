@@ -86,10 +86,22 @@ jobs:
         with:
           name: BRENE-Flashable-Dev.zip
           path: artifact-roundtrip
+          # The original artifact is a ZIP: preserve it instead of extracting
+          # module.prop and other members into the download directory.
+          skip-decompress: true
       - name: Validate downloaded file is directly flashable
         run: |
           set -euo pipefail
-          test -f artifact-roundtrip/BRENE-Flashable-Dev.zip
-          cmp BRENE-Flashable-Dev.zip artifact-roundtrip/BRENE-Flashable-Dev.zip
-          python3 tests/check-flashable-zip.py artifact-roundtrip/BRENE-Flashable-Dev.zip
+          ls -la artifact-roundtrip
+          if [ -f artifact-roundtrip/BRENE-Flashable-Dev.zip ]; then
+            DOWNLOADED=artifact-roundtrip/BRENE-Flashable-Dev.zip
+          elif [ -f artifact-roundtrip ]; then
+            DOWNLOADED=artifact-roundtrip
+          else
+            mapfile -t files < <(find artifact-roundtrip -maxdepth 1 -type f)
+            [ "${#files[@]}" -eq 1 ] || { echo "Expected one downloadable ZIP file"; exit 1; }
+            DOWNLOADED=${files[0]}
+          fi
+          cmp BRENE-Flashable-Dev.zip "$DOWNLOADED"
+          python3 tests/check-flashable-zip.py "$DOWNLOADED"
           echo "Direct-download artifact is byte-for-byte identical to module ZIP."
