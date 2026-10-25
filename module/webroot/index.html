@@ -907,6 +907,9 @@
 					<div class="brene-card-heading"><h3>DuckDetector 核对</h3></div>
 					<p class="brene-helper">此前报告的 Mount/Memory 警告尚未消除或复测。可生成设备证据文件，比较异常是否来自真实挂载或共享内存统计。</p>
 					<button class="brene-secondary-action" id="duck-audit-button" type="button">生成只读检测报告</button>
+					<button class="brene-secondary-action" id="duck-watch-button" type="button">启动 90 秒进程捕获</button>
+					<p class="brene-helper">先点捕获，然后切换到鸭子检测器运行 Memory/Mount 扫描。BRENE 只采集一次，结束后回到这里查看状态。</p>
+					<p class="brene-helper" id="duck-watch-status" role="status">未启动监听</p>
 					<p class="brene-helper" id="duck-audit-status" role="status">报告仅保存在本机 Download，不上传网络。</p>
 				</div>
 			</section>
