@@ -71,11 +71,12 @@ try{
     await page.waitForFunction(()=>!document.querySelector('.preload-hidden'),{timeout:8000})
     const baseline=await page.evaluate(()=>{
       const header=document.querySelector('.app-header').getBoundingClientRect()
+      const title=document.querySelector('.app-header .title').getBoundingClientRect()
       const dock=document.querySelector('#tab-bar').getBoundingClientRect()
       const left=document.querySelectorAll('.dock-btn')
       const active=[...document.querySelectorAll('.tab-panel.active')].map(el=>el.dataset.panel)
       return {
-        headerTop:header.top,headerBottom:header.bottom,
+        headerTop:header.top,headerBottom:header.bottom,titleTop:title.top,
         dockLeft:dock.left,dockRight:dock.right,dockBottom:dock.bottom,
         width:innerWidth,scrollWidth:document.documentElement.scrollWidth,
         dockPosition:getComputedStyle(document.querySelector('#tab-bar')).position,
@@ -88,10 +89,18 @@ try{
     assert.equal(baseline.overflowX,'visible',scenario.name+' dock must not scroll')
     assert.ok(baseline.dockLeft>=-1&&baseline.dockRight<=scenario.width+1,scenario.name+' dock overflow')
     assert.ok(baseline.scrollWidth<=scenario.width+3,scenario.name+' body horizontally overflows')
-    assert.ok(baseline.headerTop>=-1&&baseline.headerTop<=scenario.top+15,scenario.name+' header has excessive top gap')
+    assert.ok(baseline.headerTop>=-1&&baseline.headerTop<=scenario.top+15,scenario.name+' header container is displaced')
+    assert.ok(baseline.titleTop>=Math.max(0,scenario.top-8)&&baseline.titleTop<=scenario.top+44,
+      scenario.name+' header TITLE is too far below the status bar: '+baseline.titleTop)
     assert.deepEqual(baseline.active,['home'],scenario.name+' initial panel')
 
+    if(scenario.name==='mobile-393'){
+      await page.screenshot({path:path.join(out,'mobile-393-overview.png'),fullPage:true})
+    }
     await page.locator('[data-group=privacy]').click()
+    if(scenario.name==='mobile-393'){
+      await page.screenshot({path:path.join(out,'mobile-393-privacy.png'),fullPage:true})
+    }
     await page.locator('#subnav button').nth(2).click()
     assert.ok(await page.locator('[data-panel=rom]').isVisible(),scenario.name+' ROM panel')
     await page.locator('[data-group=kernel]').click()
