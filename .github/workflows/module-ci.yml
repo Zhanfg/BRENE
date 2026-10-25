@@ -26,6 +26,8 @@ jobs:
           node --check module/webroot/script.js
           node --check module/webroot/locale.js
           node --check module/webroot/kstat-ui.js
+      - name: Verify WebUI localization and layout
+        run: node tests/test-webui-i18n.mjs
       - name: Verify WebUI and KSTAT wiring
         run: |
           python3 - <<'PY'
