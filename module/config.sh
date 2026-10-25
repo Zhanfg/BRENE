@@ -9,7 +9,8 @@ config_su_compat=1
 config_spoof_uname=1
 config_selinux_hide=1
 config_kernel_umount=1
-config_shrink_buffer_size=1
+# Preserve boot diagnostics: only shrink logcat buffer when explicitly enabled.
+config_shrink_buffer_size=0
 config_hide_custom_recovery=1
 config_hide_ksu_directories=0
 config_enable_avc_log_spoofing=1
