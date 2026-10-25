@@ -179,53 +179,52 @@ exec('[[ -e /storage/emulated/0/..5.u.S ]] && echo "Abnormal" || echo "Normal"')
 	container.innerText = result.stdout
 })
 
-// Recommended Modules
+// Query modules once and tolerate unavailable, blank or unexpected ksud output.
 exec('ksud module list').then((result) => {
-	if (result.errno !== 0) return
-
-	const container = document.querySelector('#recommended-modules')
-	const modules = JSON.parse(result.stdout)
-	const moduleIds = modules.map((mod) => mod.id)
-	const cardRows = container.querySelectorAll('.card-row')
-
-	cardRows.forEach((row) => {
-		const moduleKey = row.getAttribute('data-module')
-		const statusSpan = row.querySelector('.status-text')
-
-		if (moduleIds.includes(moduleKey)) {
-			statusSpan.innerText = 'Status: Installed'
-			statusSpan.style.color = '#4CAF50'
-		}
-	})
-
-	exec('[[ -e /data/adb/modules/TA_utl ]]').then((result) => {
-		if (result.errno !== 0) return
-
-		const card = document.querySelector('[data-module="tricky_addon"]')
-		const statusSpan = card.querySelector('.status-text')
-		statusSpan.innerText = 'Status: Installed'
-		statusSpan.style.color = '#4CAF50'
-	})
-})
-
-// Incompatible Modules
-exec('ksud module list').then((result) => {
-	if (result.errno !== 0) return
-
-	const container = document.querySelector('#incompatible-modules')
-	const modules = JSON.parse(result.stdout)
-	const moduleIds = modules.map((mod) => mod.id)
-	const cardRows = container.querySelectorAll('.card-row')
-
-	cardRows.forEach((row) => {
-		const moduleKey = row.getAttribute('data-module')
-		const statusSpan = row.querySelector('.status-text')
-
-		if (moduleIds.includes(moduleKey)) {
-			statusSpan.innerText = 'Status: Installed'
-			statusSpan.style.color = '#ff0000be'
-		}
-	})
+  const recommended = document.querySelector('#recommended-modules')
+  const incompatible = document.querySelector('#incompatible-modules')
+  let modules = null
+  if (result.errno === 0 && result.stdout.trim()) {
+    try {
+      const decoded = JSON.parse(result.stdout)
+      if (Array.isArray(decoded)) modules = decoded
+      else if (Array.isArray(decoded?.modules)) modules = decoded.modules
+    } catch (_) { /* Leave status as unavailable instead of crashing WebUI. */ }
+  }
+  for (const group of [recommended, incompatible]) {
+    if (!group) continue
+    group.querySelectorAll('.card-row').forEach(row => {
+      const status = row.querySelector('.status-text')
+      if (!status) return
+      if (!modules) {
+        status.textContent = '状态：无法读取模块列表'
+        status.style.color = 'var(--brene-muted)'
+        return
+      }
+      const ids = new Set(modules.map(mod => mod?.id).filter(Boolean))
+      if (ids.has(row.getAttribute('data-module'))) {
+        status.textContent = 'Status: Installed'
+        status.style.color = group === recommended ? '#4CAF50' : '#d24b4b'
+      } else {
+        status.textContent = 'Status: Not installed'
+        status.style.color = ''
+      }
+    })
+  }
+  // Preserve upstream special case for Tricky Addon.
+  if (recommended) {
+    exec('test -e /data/adb/modules/TA_utl').then(check => {
+      if (check.errno !== 0) return
+      const row = recommended.querySelector('[data-module="tricky_addon"] .status-text')
+      if (row) {
+        row.textContent = 'Status: Installed'
+        row.style.color = '#4CAF50'
+      }
+    })
+  }
+}).catch(() => {
+  document.querySelectorAll('#recommended-modules .status-text, #incompatible-modules .status-text')
+    .forEach(node => { node.textContent='状态：查询失败' })
 })
 
 // Load enabled features
