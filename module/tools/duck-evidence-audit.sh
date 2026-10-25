@@ -90,7 +90,7 @@ if [ -n "${BRENE_AUDIT_MOUNTINFO:-}" ]; then SOURCE='explicit diagnostic fixture
         printf "Exact /system mount type=%s /vendor mount type=%s\n",systemfs==""?"not-present":systemfs,vendorfs==""?"not-present":vendorfs
         print "NOTE: match the resolved path, specific namespace, and effective mount stack before comparing with statfs."
       }
-"$MOUNTINFO"
+    ' "$MOUNTINFO"
   else
     echo "Unavailable: mountinfo; denied access is not evidence of a hidden mount."
   fi
