@@ -160,20 +160,25 @@ function translate(text) {
   if (!value || !Object.prototype.hasOwnProperty.call(CN,value)) return null
   return CN[value]
 }
+function localizedOutput(original,node) {
+  if (!chinese) return original
+  let output = applyText(original)
+  // Device summaries are UI text, but raw kernel logs and paths are untouched.
+  if (node.parentElement?.closest('#custom-rom') && /^Yes\\s*$/.test(original)) output = '检测到'
+  if (node.parentElement?.closest('#custom-rom') && /^No\\s*$/.test(original)) output = '未检测到'
+  if (/^Default: /m.test(original)) output = output.replace(/Default:/g,'原始值：').replace(/Spoofed:/g,'伪装值：')
+  return output
+}
 function updateNode(node) {
   if (!node || node.nodeType !== 3 || node.parentElement?.closest(SELECTOR_SKIP)) return
   const current = node.nodeValue || ''
   const saved = originals.get(node)
-  const previousTranslated = saved ? applyText(saved) : null
+  const previousTranslated = saved ? localizedOutput(saved,node) : null
   // A runtime component may replace its own text after the first translation.
   let original = saved || current
   if (saved && current !== saved && current !== previousTranslated) original = current
   originals.set(node,original)
-  let output = chinese ? applyText(original) : original
-  // Translate only the status field of the ROM/recovery checks, never shell logs.
-  if(chinese && node.parentElement?.closest('#custom-rom') && /^Yes\\s*$/.test(original)) output = '检测到'
-  if(chinese && node.parentElement?.closest('#custom-rom') && /^No\\s*$/.test(original)) output = '未检测到'
-  if(chinese && /^Default: /m.test(original)) output = output.replace(/Default:/g,'原始值：').replace(/Spoofed:/g,'伪装值：')
+  const output = localizedOutput(original,node)
   if (current !== output) node.nodeValue = output
 }
 function applyText(raw) {
