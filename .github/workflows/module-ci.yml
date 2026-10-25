@@ -18,6 +18,9 @@ jobs:
           set -e
           for file in module/*.sh; do bash -n "$file"; done
           sh -n module/kstat-rules.sh
+          sh -n module/autoshield.sh
+      - name: AutoShield discovery / apply dry-run tests
+        run: sh tests/test-autoshield.sh
       - name: KSTAT parser dry-run tests
         run: sh tests/test-kstat.sh
       - name: Check WebUI JavaScript syntax
@@ -26,6 +29,7 @@ jobs:
           node --check module/webroot/script.js
           node --check module/webroot/locale.js
           node --check module/webroot/kstat-ui.js
+          node --check module/webroot/autoshield-ui.js
       - name: Verify WebUI localization and layout
         run: node tests/test-webui-i18n.mjs
       - name: Verify WebUI and KSTAT wiring
@@ -42,6 +46,11 @@ jobs:
               assert 'kstat-rules.sh' in (root/name).read_text()
           assert 'custom_sus_kstat.txt' in (root/'customize.sh').read_text()
           assert 'custom_static_kstat.txt' in (root/'customize.sh').read_text()
+          assert 'config_auto_hide=0' in (root/'config.sh').read_text()
+          assert 'autoshield.sh' in (root/'boot-completed.sh').read_text()
+          assert 'autoshield.sh' in (root/'customize.sh').read_text()
+          for item in ('autoshield-ui.js','brene-auto-scan','brene-auto-enable','brene-auto-disable'):
+              assert item in page, f'Missing AutoShield WebUI: {item}'
           assert 'config_use_custom_cmdline_or_bootconfig=0' in (root/'config.sh').read_text()
           assert 'susfs.previous' in (root/'customize.sh').read_text()
           assert 'susfs.previous' in (root/'uninstall.sh').read_text()
