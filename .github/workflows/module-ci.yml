@@ -64,14 +64,32 @@ jobs:
               assert command in source
           print('WebUI/KSTAT integration checks passed')
           PY
-      - name: Build module ZIP
+      - name: Build directly flashable module ZIP
         run: |
+          set -euo pipefail
           cd module
-          zip -q -r ../BRENE-SuSFS-dev.zip .
+          zip -q -r ../BRENE-Flashable-Dev.zip .
           cd ..
-          unzip -t BRENE-SuSFS-dev.zip | tail -n 2
-      - uses: actions/upload-artifact@v4
+          python3 tests/check-flashable-zip.py BRENE-Flashable-Dev.zip
+          sha256sum BRENE-Flashable-Dev.zip > BRENE-Flashable-Dev.zip.sha256
+      # Since Feb 2026 upload-artifact v7 supports single-file uploads
+      # without an additional ZIP wrapper. SukiSU must see module.prop at
+      # the outermost level of the downloaded file.
+      - name: Upload one directly flashable ZIP (no nested archive)
+        uses: actions/upload-artifact@v7
         with:
-          name: BRENE-SuSFS-dev
-          path: BRENE-SuSFS-dev.zip
+          path: BRENE-Flashable-Dev.zip
+          archive: false
           if-no-files-found: error
+      - name: Download artifact again for installation-layout regression
+        uses: actions/download-artifact@v8
+        with:
+          name: BRENE-Flashable-Dev.zip
+          path: artifact-roundtrip
+      - name: Validate downloaded file is directly flashable
+        run: |
+          set -euo pipefail
+          test -f artifact-roundtrip/BRENE-Flashable-Dev.zip
+          cmp BRENE-Flashable-Dev.zip artifact-roundtrip/BRENE-Flashable-Dev.zip
+          python3 tests/check-flashable-zip.py artifact-roundtrip/BRENE-Flashable-Dev.zip
+          echo "Direct-download artifact is byte-for-byte identical to module ZIP."
