@@ -128,7 +128,17 @@ const CN = {
   'Adding sus mounts to umount list via built-in KernelSU kernel umount':'使用 KernelSU 内置卸载功能将可疑挂载加入卸载列表',
   'Suspicious Mounts':'可疑挂载','BRENE Logs':'BRENE 日志',
   'Enable or disable BRENE Logs':'开启或关闭 BRENE 日志',
-  'MOUNTS':'挂载规则','Kernel Release':'内核版本号'
+  'MOUNTS':'挂载规则','Kernel Release':'内核版本号',
+  'Example:':'示例：',
+  'UID Filter':'UID 过滤器',
+  '0: Effective for non-app processes (uid < 10000)':'0：非应用进程（UID 小于 10000）',
+  '3: Effective for processes that are marked umounted with uid >= 10000 (Use it carefully!)':'3：UID 不小于 10000 且已标记卸载的应用进程（谨慎使用）',
+  'Status: Installed':'状态：已安装',
+  'Failed to load':'读取失败',
+  'Normal':'正常','Abnormal':'异常',
+  '每行一条：/system/etc/hosts|update 或 /system/etc/hosts|clone。仅在内核启用 SUS_KSTAT 时写入；重启生效。首次记录在 early boot，更新在 boot-completed，因此无法覆盖更早发生的挂载操作。':'每行一条：/system/etc/hosts|update 或 /system/etc/hosts|clone。仅当内核支持 KSTAT 时生效，保存后需重启；开机前后两个阶段不能覆盖全部挂载时机。',
+  '每行 13 项，以 | 分隔：绝对路径、ino、dev、nlink、size、atime、atime_nsec、mtime、mtime_nsec、ctime、ctime_nsec、blocks、blksize。值为非负整数或 default。仅在重启后、已存在的文件上应用。':'每行 13 项，以 | 分隔：文件绝对路径及 12 个元数据字段（inode、设备号、链接数、大小、时间、块数等）。填写非负整数或 default，重启后应用。',
+  '高级功能：完整替代内容，不是增量参数。必须同时开启上方原有“Cmdline/Bootconfig spoofing”及下面的自定义开关；两者默认关闭。不要删除未知参数。':'高级功能：替换全部启动参数内容，而不是只修改单个参数。必须同时开启内核启动参数伪装和自定义开关，两者默认关闭。请保留未知参数。'
 }
 const button = document.createElement('button')
 button.type = 'button'
@@ -159,7 +169,11 @@ function updateNode(node) {
   let original = saved || current
   if (saved && current !== saved && current !== previousTranslated) original = current
   originals.set(node,original)
-  const output = chinese ? applyText(original) : original
+  let output = chinese ? applyText(original) : original
+  // Translate only the status field of the ROM/recovery checks, never shell logs.
+  if(chinese && node.parentElement?.closest('#custom-rom') && /^Yes\\s*$/.test(original)) output = '检测到'
+  if(chinese && node.parentElement?.closest('#custom-rom') && /^No\\s*$/.test(original)) output = '未检测到'
+  if(chinese && /^Default: /m.test(original)) output = output.replace(/Default:/g,'原始值：').replace(/Spoofed:/g,'伪装值：')
   if (current !== output) node.nodeValue = output
 }
 function applyText(raw) {
