@@ -160,8 +160,8 @@ function translate(text) {
   if (!value || !Object.prototype.hasOwnProperty.call(CN,value)) return null
   return CN[value]
 }
-function localizedOutput(original,node) {
-  if (!chinese) return original
+function localizedOutput(original,node, outputChinese = chinese) {
+  if (!outputChinese) return original
   let output = applyText(original)
   // Device summaries are UI text, but raw kernel logs and paths are untouched.
   if (node.parentElement?.closest('#custom-rom') && /^Yes\\s*$/.test(original)) output = '检测到'
@@ -173,7 +173,7 @@ function updateNode(node) {
   if (!node || node.nodeType !== 3 || node.parentElement?.closest(SELECTOR_SKIP)) return
   const current = node.nodeValue || ''
   const saved = originals.get(node)
-  const previousTranslated = saved ? localizedOutput(saved,node) : null
+  const previousTranslated = saved ? localizedOutput(saved,node,true) : null
   // A runtime component may replace its own text after the first translation.
   let original = saved || current
   if (saved && current !== saved && current !== previousTranslated) original = current
