@@ -7,7 +7,9 @@ BASE=${BRENE_WATCH_BASE:-/data/adb/brene}
 TOOL=${BRENE_WATCH_TOOL:-/data/adb/modules/brene/tools/duck-evidence-audit.sh}
 STATUS=$BASE/duck-watch.status
 LOCK=$BASE/.duck-watch.lock
-LIMIT=90
+LIMIT=${BRENE_WATCH_LIMIT:-90}
+case "$LIMIT" in ''|*[!0-9]*) LIMIT=90 ;; esac
+[ "$LIMIT" -gt 0 ] && [ "$LIMIT" -le 90 ] || LIMIT=90
 mkdir -p "$BASE" || exit 1
 if ! mkdir "$LOCK" 2>/dev/null; then
   echo 'Another DuckDetector capture is already active'
