@@ -61,7 +61,7 @@ cp -pf "${MODPATH}/tools/susfs" "${PERSISTENT_DIR}/susfs" ||
 cp -f "${MODPATH}/tools/susfs" "${DEST_BIN_DIR}/susfs" ||
     abort '[❌] Failed to install BRENE SuSFS binary'
 chmod 755 "${DEST_BIN_DIR}/susfs"
-chmod +x "${MODPATH}/inotify.sh" "${MODPATH}/remove_ksu_directory.sh" "${MODPATH}/kstat-rules.sh"
+chmod +x "${MODPATH}/inotify.sh" "${MODPATH}/remove_ksu_directory.sh" "${MODPATH}/kstat-rules.sh" "${MODPATH}/autoshield.sh"
 ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/sus"
 ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/ksu_susfs"
 
