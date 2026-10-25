@@ -386,7 +386,9 @@ body.body-content{
   background:var(--md-sys-color-primary-container);
   color:var(--md-sys-color-on-primary-container);
 }
-md-ripple{pointer-events:none!important}
+/* Decorative ripple elements are nonfunctional in this KSU WebView and can
+   appear as stray dots at the corners of cards. Native md-switch remains active. */
+md-ripple{display:none!important;pointer-events:none!important}
 @media(min-width:780px){
   body.body-content{padding-bottom:120px!important}
   .app-header .header-inner{padding:calc(max(8px,var(--top-inset,0px)) + 9px) 24px 16px!important}
