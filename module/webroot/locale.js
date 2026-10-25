@@ -161,6 +161,21 @@ function translate(text) {
   return CN[value]
 }
 const EN_SOURCE = {
+  '概览':'Overview',
+  '隐私':'Privacy',
+  '内核':'Kernel',
+  '工具':'Tools',
+  '诊断':'Diagnostics',
+  '路径隐藏':'Path hiding',
+  '信息伪装':'Spoofing',
+  'ROM 适配':'ROM settings',
+  '高级设置':'Advanced',
+  '运行诊断':'Diagnostics',
+  '挂载来源与异常线索':'Mount evidence',
+  'BRENE 运行日志':'BRENE runtime logs',
+  '只读检查当前环境；不会修改挂载或内核状态。':'Read-only checks of the current environment; nothing is modified.',
+  '查看启动及规则应用记录':'View boot and rule application logs',
+  '生成只读检测报告':'Generate read-only report',
   'AutoShield · 自动规则管理':'AutoShield · Automatic Rules',
   '自动发现模块映射路径':'Discover module native-library mappings',
   '扫描已启用模块中 Zygisk 的原生 .so 文件，生成 SUS_MAP 候选清单。默认只预览，不隐藏，不删除文件。开启自动应用后，每次启动仅尝试应用内核支持的规则。':'Scan enabled modules for Zygisk .so files and preview SUS_MAP candidates. Preview never applies rules or deletes files.',
@@ -209,7 +224,7 @@ function updateAttributes(element) {
     if (original === undefined || (current !== original && current !== applyText(original))) {
       original = current; saved.set(name,original)
     }
-    const target = chinese ? applyText(original) : original
+    const target = localizedOutput(original,null)
     if (current !== target) element.setAttribute(name,target)
   }
 }
@@ -232,6 +247,9 @@ button.addEventListener('click', () => {
   chinese = !chinese
   try { localStorage.setItem('brene_locale', chinese ? 'zh' : 'en') } catch (_) {}
   render()
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent('brene-locale-change', {detail:chinese?'zh':'en'}))
+  }
 })
 // Observe runtime text refreshes (feature reports and module status) without touching logs.
 const observer = new MutationObserver(records => {
