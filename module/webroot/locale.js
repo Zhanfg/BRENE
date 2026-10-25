@@ -160,8 +160,19 @@ function translate(text) {
   if (!value || !Object.prototype.hasOwnProperty.call(CN,value)) return null
   return CN[value]
 }
+const EN_SOURCE = {
+  'AutoShield · 自动规则管理':'AutoShield · Automatic Rules',
+  '自动发现模块映射路径':'Discover module native-library mappings',
+  '扫描已启用模块中 Zygisk 的原生 .so 文件，生成 SUS_MAP 候选清单。默认只预览，不隐藏，不删除文件。开启自动应用后，每次启动仅尝试应用内核支持的规则。':'Scan enabled modules for Zygisk .so files and preview SUS_MAP candidates. Preview never applies rules or deletes files.',
+  '正在读取 AutoShield 状态…':'Reading AutoShield status…',
+  '尚未扫描':'Not scanned yet',
+  '扫描与预览':'Scan and preview',
+  '启用并应用':'Enable and apply',
+  '关闭自动应用':'Disable automatic application',
+  '仅对符合条件的映射文件生成规则；并不保证所有模块痕迹都能隐藏。关闭后不再自动添加规则，已有内核规则必须重启才能清除。':'Only eligible library mappings are considered. Results are not guaranteed. Reboot after disabling to clear already-applied kernel rules.'
+}
 function localizedOutput(original,node, outputChinese = chinese) {
-  if (!outputChinese) return original
+  if (!outputChinese) return EN_SOURCE[clean(original)] ?? original
   let output = applyText(original)
   // Device summaries are UI text, but raw kernel logs and paths are untouched.
   if (node.parentElement?.closest('#custom-rom') && /^Yes\\s*$/.test(original)) output = '检测到'
@@ -173,10 +184,11 @@ function updateNode(node) {
   if (!node || node.nodeType !== 3 || node.parentElement?.closest(SELECTOR_SKIP)) return
   const current = node.nodeValue || ''
   const saved = originals.get(node)
-  const previousTranslated = saved ? localizedOutput(saved,node,true) : null
+  const previousChinese = saved ? localizedOutput(saved,node,true) : null
+  const previousEnglish = saved ? localizedOutput(saved,node,false) : null
   // A runtime component may replace its own text after the first translation.
   let original = saved || current
-  if (saved && current !== saved && current !== previousTranslated) original = current
+  if (saved && current !== saved && current !== previousChinese && current !== previousEnglish) original = current
   originals.set(node,original)
   const output = localizedOutput(original,node)
   if (current !== output) node.nodeValue = output
