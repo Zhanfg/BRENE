@@ -233,7 +233,7 @@ exec('susfs show enabled_features').then((result) => {
 	const container = document.getElementById('kernel-features-container')
 
 	if (result.errno !== 0) {
-		container.innerText = 'Failed to load enabled features'
+		container.innerText = '无法读取内核功能列表'
 		return
 	}
 	container.innerText = result.stdout.replaceAll('CONFIG_KSU_SUSFS_', '')
@@ -260,7 +260,7 @@ exec(`cat ${PERSISTENT_DIR}/log.txt`).then((result) => {
 	const container = document.getElementById('logs')
 
 	if (result.errno !== 0) {
-		container.textContent += 'Failed to load logs'
+		container.textContent += '无法读取日志'
 		return
 	}
 	container.textContent += result.stdout
@@ -268,7 +268,7 @@ exec(`cat ${PERSISTENT_DIR}/log.txt`).then((result) => {
 
 	exec(`cat ${PERSISTENT_DIR}/logs.txt`).then((result) => {
 		if (result.errno !== 0) {
-			container.textContent += 'Failed to load logs'
+			container.textContent += '无法读取日志'
 			return
 		}
 		container.textContent += result.stdout
@@ -305,7 +305,7 @@ function safeSaveTextFile(filename, content) {
 }
 function updateConfig(config, value) {
 	exec(`sed -i "s/^${config}=.*/${config}=${value}/" ${PERSISTENT_DIR}/config.sh`).then((result) => {
-		if (result.errno !== 0) toast('Failed to update config')
+		if (result.errno !== 0) toast('保存配置失败')
 	})
 }
 
@@ -313,27 +313,27 @@ function updateConfig(config, value) {
 // Helper function to update config
 function updateConfig2(config, value) {
  if (!/^[a-z_]+$/.test(config) || !/^[A-Za-z0-9._+:@#, -]{0,128}$/.test(value)) {
-  toast('Invalid config value')
+  toast('配置值不合法')
   return
  }
  const escaped = value.replace(/[\\&|]/g, char => '\\' + char)
  const sedExpr = `s|^${config}=.*|${config}='${escaped}'|`
  exec(`sed -i ${shellQuote(sedExpr)} ${shellQuote(PERSISTENT_DIR+'/config.sh')}`).then(result => {
-  if(result.errno !== 0) toast('Failed to update config')
+  if(result.errno !== 0) toast('保存配置失败')
  })
 }
 
 // Helper function to set config immedialtely that no need to reboot
 function setFeature(cmd) {
 	exec(cmd).then((result) => {
-		toast(result.errno === 0 ? 'No need to reboot' : result.stderr)
+		toast(result.errno === 0 ? '已应用，无需重启' : result.stderr)
 	})
 }
 
 // Load config and add toggle event
 exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 	if (result.errno !== 0) {
-		toast('Failed to load config')
+		toast('读取配置失败')
 		return
 	}
 
@@ -388,9 +388,9 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 	dialog.addEventListener('close', async () => {
 		if (dialog.returnValue !== 'confirm') return
 		const result = await exec(`cp -f ${MODDIR}/config.sh ${PERSISTENT_DIR}/config.sh`)
-		if (result.errno !== 0) { toast(result.stderr || 'Reset failed'); return }
+		if (result.errno !== 0) { toast(result.stderr || '恢复默认设置失败'); return }
 		const defaults = await exec(`cat ${PERSISTENT_DIR}/config.sh`)
-		if (defaults.errno !== 0) { toast('Cannot reload defaults'); return }
+		if (defaults.errno !== 0) { toast('无法重新加载默认配置'); return }
 		const newValues = Object.fromEntries(defaults.stdout.split('\n')
 			.filter(line => /^config_[a-z_]+=/.test(line))
 			.map(line => {
@@ -408,7 +408,7 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 		if(release) release.value = newValues.config_custom_uname_kernel_release || 'default'
 		if(version) version.value = newValues.config_custom_uname_kernel_version || 'default'
 		if(digest) digest.value = newValues.config_spoof_verified_boot_hash || ''
-		toast('Defaults restored; reboot to apply')
+		toast('已恢复默认设置，重启后生效')
 	})
 })
 
@@ -423,7 +423,7 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 				${enable ? 'rm -f' : 'touch'} "$i/disable"
 			done
 		`).then((result) => {
-			toast(result.errno === 0 ? 'Success' : result.stderr)
+			toast(result.errno === 0 ? '保存成功' : result.stderr)
 		})
 	}
 
@@ -464,14 +464,14 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 
 	button.addEventListener('click', () => {
 		const digest = textField.value.trim()
-  if (!/^[0-9a-fA-F]{64}$/.test(digest)) { toast('Expected a 64-character hexadecimal digest'); return }
+  if (!/^[0-9a-fA-F]{64}$/.test(digest)) { toast('请输入 64 位十六进制哈希'); return }
   updateConfig2('config_spoof_verified_boot_hash', digest)
 
 		exec(`resetprop -n ro.boot.vbmeta.digest ${shellQuote(digest)}`).then((result) => {
 			if (result.errno === 0) {
-				toast('No need to reboot')
+				toast('已应用，无需重启')
 			} else {
-				toast('Failed to update prop')
+				toast('更新系统属性失败')
 			}
 		})
 	})
@@ -558,13 +558,13 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 		if (file) {
 			if (content === '') {
 				safeSaveTextFile(file, '').then((result) => {
-					toast(result.errno === 0 ? 'Success, reboot to apply' : result.stderr)
+					toast(result.errno === 0 ? '保存成功，重启后生效' : result.stderr)
 				})
 			} else {
 				content = content.replaceAll('/sdcard', '/storage/emulated/0')
 
 				safeSaveTextFile(file, content).then((result) => {
-					toast(result.errno === 0 ? 'Success, reboot to apply' : result.stderr)
+					toast(result.errno === 0 ? '保存成功，重启后生效' : result.stderr)
 				})
 			}
 		}
@@ -588,11 +588,11 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 		if (file) {
 			if (content === '') {
 				safeSaveTextFile(file, '').then((result) => {
-					toast(result.errno === 0 ? 'Success' : result.stderr)
+					toast(result.errno === 0 ? '保存成功' : result.stderr)
 				})
 			} else {
 				safeSaveTextFile(file, content).then((result) => {
-					toast(result.errno === 0 ? 'Success' : result.stderr)
+					toast(result.errno === 0 ? '保存成功' : result.stderr)
 				})
 			}
 		}
