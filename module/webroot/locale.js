@@ -190,8 +190,8 @@ function localizedOutput(original,node, outputChinese = chinese) {
   if (!outputChinese) return EN_SOURCE[clean(original)] ?? original
   let output = applyText(original)
   // Device summaries are UI text, but raw kernel logs and paths are untouched.
-  if (node.parentElement?.closest('#custom-rom') && /^Yes\\s*$/.test(original)) output = '检测到'
-  if (node.parentElement?.closest('#custom-rom') && /^No\\s*$/.test(original)) output = '未检测到'
+  if (node?.parentElement?.closest('#custom-rom') && /^Yes\\s*$/.test(original)) output = '检测到'
+  if (node?.parentElement?.closest('#custom-rom') && /^No\\s*$/.test(original)) output = '未检测到'
   if (/^Default: /m.test(original)) output = output.replace(/Default:/g,'原始值：').replace(/Spoofed:/g,'伪装值：')
   return output
 }
@@ -221,7 +221,7 @@ function updateAttributes(element) {
     const current = element.getAttribute(name)
     if (current == null) continue
     let original = saved.get(name)
-    if (original === undefined || (current !== original && current !== applyText(original))) {
+    if (original === undefined || (current !== original && current !== localizedOutput(original,null,true) && current !== localizedOutput(original,null,false))) {
       original = current; saved.set(name,original)
     }
     const target = localizedOutput(original,null)
