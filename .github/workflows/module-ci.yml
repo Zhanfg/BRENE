@@ -21,6 +21,8 @@ jobs:
           sh -n module/autoshield.sh
           sh -n module/tools/duck-evidence-audit.sh
           sh -n module/tools/duck-evidence-watch.sh
+      - name: Validate non-destructive first-install defaults
+        run: python3 tests/test-config-policy.py
       - name: Read-only Duck Detector evidence regression
         run: sh tests/test-duck-evidence.sh
       - name: DuckDetector capture timeout and lock cleanup
