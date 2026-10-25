@@ -22,6 +22,7 @@ jobs:
           sh -n module/tools/duck-evidence-audit.sh
           sh -n module/tools/duck-evidence-watch.sh
           sh -n module/tools/gpu-v891-payload-audit.sh
+          sh -n module/tools/gpu-dualstack-preflight.sh
       - name: Validate non-destructive first-install defaults
         run: python3 tests/test-config-policy.py
       - name: Read-only Duck Detector evidence regression
