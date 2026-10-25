@@ -13,42 +13,84 @@ fi
 
 pick_pid() {
   if [ -n "${BRENE_AUDIT_PID:-}" ]; then
-    candidate=$BRENE_AUDIT_PID
-  else
-    candidate=$(pidof com.eltavine.duckdetector 2>/dev/null | awk '{print $1}')
+    case "$BRENE_AUDIT_PID" in ''|*[!0-9]*) return 1 ;; esac
+    [ -d "/proc/$BRENE_AUDIT_PID" ] || return 1
+    printf '%s' "$BRENE_AUDIT_PID"
+    return
   fi
-  case "$candidate" in ''|*[!0-9]*) return 1 ;; esac
-  [ -d "/proc/$candidate" ] || return 1
-  printf '%s' "$candidate"
+  for candidate in $(pidof com.eltavine.duckdetector 2>/dev/null); do
+    case "$candidate" in ''|*[!0-9]*) continue ;; esac
+    [ -d "/proc/$candidate" ] && { printf '%s' "$candidate"; return; }
+  done
+  # Android's pidof may not see other app processes in some contexts.
+  for entry in /proc/[0-9]*; do
+    [ -r "$entry/cmdline" ] || continue
+    cmd=$(tr '\000' '\n' < "$entry/cmdline" 2>/dev/null | head -n 1)
+    case "$cmd" in
+      com.eltavine.duckdetector|com.eltavine.duckdetector:*)
+        candidate=${entry##*/}
+        [ -d "/proc/$candidate" ] && { printf '%s' "$candidate"; return; }
+        ;;
+    esac
+  done
 }
 TARGET_PID=$(pick_pid 2>/dev/null || true)
 SMAPS=${BRENE_AUDIT_SMAPS:-}
 MOUNTINFO=${BRENE_AUDIT_MOUNTINFO:-}
+SOURCE='current audit process (DuckDetector not running / not visible)'
 if [ -z "$SMAPS" ] && [ -n "$TARGET_PID" ]; then SMAPS=/proc/$TARGET_PID/smaps; fi
-if [ -z "$MOUNTINFO" ] && [ -n "$TARGET_PID" ]; then MOUNTINFO=/proc/$TARGET_PID/mountinfo; fi
+if [ -z "$MOUNTINFO" ] && [ -n "$TARGET_PID" ]; then
+  MOUNTINFO=/proc/$TARGET_PID/mountinfo
+  SOURCE="DuckDetector process PID $TARGET_PID"
+fi
+if [ -n "${BRENE_AUDIT_MOUNTINFO:-}" ]; then SOURCE='explicit diagnostic fixture'; fi
 [ -n "$MOUNTINFO" ] || MOUNTINFO=/proc/self/mountinfo
 
 {
   echo "BRENE — DuckDetector evidence audit (no hiding applied)"
   date 2>/dev/null
   echo "Kernel: $(uname -r 2>/dev/null)"
-  echo "Target PID: ${TARGET_PID:-not_running}"
+  echo "Target PID: ${TARGET_PID:-not_running_or_not_visible}"
+  echo "Mountinfo source: $SOURCE"
   echo "Snapshot of current state; may differ from an earlier scan."
   echo
-  echo "== Filesystem types observed by this audit shell =="
+  echo "== Filesystem types and canonical paths observed by this audit shell =="
   for path in /system /vendor; do
     kind=$(stat -f -c %T "$path" 2>/dev/null || echo unavailable)
-    printf '%s statfs-type: %s\n' "$path" "$kind"
+    canonical=$(readlink -f "$path" 2>/dev/null || echo unknown)
+    printf '%s resolved=%s statfs-type=%s\n' "$path" "$canonical" "$kind"
+    ls -ld "$path" 2>/dev/null || true
   done
   echo
-  echo "== Mount records in detector namespace (if available) =="
+  echo "== Mount records from: $SOURCE =="
   if [ -r "$MOUNTINFO" ]; then
     awk '
-      ($5=="/system" || $5=="/vendor" || $0 ~ / - overlay /) {
-        if (++n <= 70) print $0
+      {
+        split($0, parts, " - "); split(parts[2], tail, " ")
+        fs=tail[1]
+        if ($5=="/system" || $5=="/vendor") {
+          printf "Exact partition mount: %s\n", $0
+          if ($5=="/system") systemfs=fs
+          if ($5=="/vendor") vendorfs=fs
+        }
+        if (fs=="overlay") {
+          total++
+          if ($0 ~ /lowerdir=[^ ]*\/my_(region|preload|product|heytap|stock|engineering)/ ||
+              $0 ~ /lowerdir=[^ ]*\/mnt\/opex\//) {
+            oplus++
+            if (oplus<=30) print "OPlus-like candidate (NOT VERIFIED): " $0
+          } else {
+            unclassified++
+            if (unclassified<=30) print "Unclassified candidate (REVIEW): " $0
+          }
+        }
       }
-      END { printf "Relevant mountinfo entries: %d (up to 70 printed)\n", n+0 }
-    ' "$MOUNTINFO"
+      END {
+        printf "Overlays total=%d OPlus-like=%d unclassified=%d\n",total+0,oplus+0,unclassified+0
+        printf "Exact /system mount type=%s /vendor mount type=%s\n",systemfs==""?"not-present":systemfs,vendorfs==""?"not-present":vendorfs
+        print "NOTE: match the resolved path, specific namespace, and effective mount stack before comparing with statfs."
+      }
+"$MOUNTINFO"
   else
     echo "Unavailable: mountinfo; denied access is not evidence of a hidden mount."
   fi
