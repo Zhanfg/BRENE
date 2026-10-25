@@ -43,6 +43,8 @@ config_hide_custom_rom_paths_2=0
 config_hide_framework_res_apk=0
 config_spoof_cmdline_or_bootconfig=0
 config_use_custom_cmdline_or_bootconfig=0
+# AutoShield: local Zygisk map discovery; opt-in, no directory deletion
+config_auto_hide=0
 
 config_spoof_verified_boot_hash=''
 config_custom_uname_kernel_release='default'
