@@ -68,3 +68,29 @@ loadMountEvidence().catch(err=>{
 loadLogEvidence().catch(err=>{
   if(logOutput)logOutput.textContent='读取日志失败：'+String(err);
 });
+
+const duckWatchButton=elem('duck-watch-button');
+const duckWatchStatus=elem('duck-watch-status');
+const WATCH='/data/adb/modules/brene/tools/duck-evidence-watch.sh';
+async function refreshDuckWatchStatus() {
+  if (!duckWatchStatus) return;
+  const result=await exec('cat /data/adb/brene/duck-watch.status');
+  duckWatchStatus.textContent=result.errno===0&&result.stdout.trim()
+    ?result.stdout.trim():'尚无捕获结果';
+}
+duckWatchButton?.addEventListener('click',async ()=>{
+  duckWatchButton.disabled=true;
+  if(duckWatchStatus)duckWatchStatus.textContent='已请求启动捕获；请切换到鸭子检测器进行检测…';
+  try {
+    // No user input is interpolated; all process I/O is detached from the WebUI.
+    const cmd='sh -c "(sh '+WATCH+' </dev/null >/data/adb/brene/duck-watch.shell.log 2>&1 &)"';
+    const r=await exec(cmd);
+    if(r.errno!==0) throw new Error(r.stderr||'无法启动捕获脚本');
+    await refreshDuckWatchStatus();
+    toast('已启动短时进程监听，请在 90 秒内打开 DuckDetector');
+  }catch(e) {
+    if(duckWatchStatus)duckWatchStatus.textContent='启动失败：'+String(e.message||e);
+  }finally {duckWatchButton.disabled=false}
+});
+window.addEventListener('focus',()=>refreshDuckWatchStatus().catch(()=>{}));
+refreshDuckWatchStatus().catch(()=>{});
