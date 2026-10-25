@@ -276,3 +276,128 @@ md-switch { scale: .96; transform-origin: right center; }
 }
 #brene-auto-candidates{max-height:190px;overflow:auto;font-size:12px}
 @media(max-width:360px){.brene-autoshield-actions{flex-direction:column;align-items:stretch}.brene-autoshield-actions button{flex:auto;width:100%}}
+
+/* 2026-10-25 Screenshot corrections — explicit final cascade. */
+html{min-height:100%}
+body.body-content{
+  padding-top:0!important;
+  padding-bottom:calc(118px + var(--bottom-inset,0px))!important;
+  min-height:100dvh;
+  overflow-x:hidden;
+}
+.app-header{position:relative;top:auto!important;box-shadow:none}
+.app-header .header-inner{
+  display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;
+  padding:calc(max(8px,var(--top-inset,0px)) + 6px) 16px 13px!important;
+  margin:0 auto;max-width:1100px;gap:8px;
+}
+.app-header .title{font-size:1.04rem;line-height:1.35;gap:9px;flex:1;min-width:0;flex-wrap:wrap}
+.app-header .title .group{gap:4px;flex-shrink:0}
+.app-header .title .group:first-child a::before{display:none!important}
+.app-header .title .group:not(:first-child){font-size:.76rem}
+.app-header .item-version{font-size:.66rem;border-radius:7px;padding:2px 6px;margin:0 2px}
+.app-header .brene-locale-button{flex-shrink:0;min-width:43px;min-height:38px}
+#tab-bar.tab-bar{
+  position:fixed!important;top:auto!important;bottom:calc(12px + var(--bottom-inset,0px))!important;
+  left:14px!important;right:14px!important;
+  width:min(580px,calc(100% - 28px))!important;margin:0 auto;
+  padding:7px!important;
+  display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:4px;align-items:stretch;
+  border:1px solid var(--brene-border)!important;border-radius:24px!important;
+  background:var(--brene-card);box-shadow:0 12px 42px rgba(0,0,0,.13);
+  overflow:visible!important;scroll-snap-type:none!important;
+  z-index:80;max-height:none!important;
+  backdrop-filter:blur(12px);
+}
+#tab-bar.tab-bar::before{display:none!important;content:none!important}
+#tab-bar .dock-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-width:0;min-height:57px;gap:3px;
+  border:0;border-radius:18px;
+  background:transparent;color:var(--brene-muted);
+  font:600 11px/1.25 system-ui,-apple-system,sans-serif;
+  padding:7px 2px;cursor:pointer;letter-spacing:0;
+}
+#tab-bar .dock-btn svg{
+  width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;
+}
+#tab-bar .dock-btn.active{
+  background:var(--md-sys-color-primary-container);
+  color:var(--md-sys-color-on-primary-container);
+}
+#tab-bar .dock-btn:focus-visible,.subnav-btn:focus-visible{outline:2px solid var(--md-sys-color-primary);outline-offset:2px}
+#subnav.subnav{
+  display:flex;flex-wrap:wrap;justify-content:flex-start;gap:7px;
+  margin:2px auto 5px;max-width:1080px;
+  width:calc(100% - 30px);
+  padding:4px 0 9px;
+  background:transparent;
+}
+#subnav.subnav[hidden]{display:none!important}
+.subnav-btn{
+  min-height:36px;border-radius:999px;
+  border:1px solid var(--brene-border);
+  padding:8px 15px;
+  background:var(--brene-card);color:var(--brene-muted);
+  font-size:12px;font-weight:670;cursor:pointer;
+}
+.subnav-btn.active{background:var(--md-sys-color-primary-container);color:var(--md-sys-color-on-primary-container);border-color:transparent}
+.tab-panel,.tab-panel.active{
+  width:100%!important;max-width:1080px!important;margin:0 auto!important;
+  padding:10px 15px 26px!important;
+}
+.tab-panel[hidden]{display:none!important}
+.tab-panel.active:not([hidden]){display:block}
+#tab-bar ~ .preload-hidden{min-width:0}
+.diagnostics-heading{margin:3px 0 19px}
+.diagnostics-heading h2{font-size:1.2rem;margin:0 0 5px;font-weight:790}
+.diagnostics-heading p{font-size:.82rem;color:var(--brene-muted);margin:0;line-height:1.55}
+.brene-panel-card{
+  background:var(--brene-card);
+  border:1px solid var(--brene-border);
+  border-radius:20px;
+  padding:16px;
+  box-shadow:var(--brene-elevation);
+  margin-bottom:13px;
+}
+.brene-card-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brene-card-heading h3{font-size:1rem;font-weight:770;line-height:1.5;margin:0}
+.brene-card-heading md-switch{scale:.89;transform-origin:center right}
+.brene-source-label{font:600 10px/1.35 ui-monospace,monospace;color:var(--brene-muted);text-align:right;max-width:42%}
+.brene-helper{font-size:.8rem;line-height:1.65;color:var(--brene-muted);margin:8px 0}
+.brene-summary{font-weight:690;font-size:.89rem;line-height:1.5;margin:14px 0 9px}
+#suspicious_mounts.brene-diagnostic-detail,
+#logs{
+  margin:0;
+  padding:12px 13px;
+  background:var(--brene-page);border:1px solid var(--brene-border);border-radius:12px;
+  color:var(--brene-text);font:12px/1.7 ui-monospace,monospace;
+  white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;
+}
+#suspicious_mounts.brene-diagnostic-detail{max-height:240px;overflow-y:auto;min-height:55px}
+.brene-log-content{margin-top:14px;border-top:1px solid var(--brene-border);padding-top:13px}
+#logs{min-height:90px;max-height:350px;overflow:auto}
+.brene-secondary-action{
+  border:1px solid var(--brene-border);
+  border-radius:12px;padding:11px 16px;min-height:43px;
+  font:650 13px system-ui;
+  background:var(--md-sys-color-primary-container);
+  color:var(--md-sys-color-on-primary-container);
+}
+md-ripple{pointer-events:none!important}
+@media(min-width:780px){
+  body.body-content{padding-bottom:120px!important}
+  .app-header .header-inner{padding:calc(max(8px,var(--top-inset,0px)) + 9px) 24px 16px!important}
+  .app-header .title{font-size:1.23rem}
+  .tab-panel,.tab-panel.active{padding:10px 24px 36px!important}
+  #subnav.subnav{width:calc(100% - 48px)}
+  .brene-panel-card{padding:21px}
+}
+@media(max-width:340px){
+  #tab-bar.tab-bar{left:9px!important;right:9px!important;width:calc(100% - 18px)!important}
+  #tab-bar .dock-btn{font-size:10px;min-height:53px}
+  .app-header .title{font-size:.95rem}
+  .app-header .title .group:not(:first-child){font-size:.69rem}
+}
