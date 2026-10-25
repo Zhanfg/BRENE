@@ -34,7 +34,7 @@ const button = {
 }
 const parent = {closest:selector=>null}
 const home = {nodeType:3,nodeValue:'Home',parentElement:parent}
-const body = {nodeType:1,matches:()=>false,querySelectorAll:()=>[]}
+const body = {nodeType:1,matches:()=>false,querySelectorAll:()=>[],getAttribute:()=>null,setAttribute:()=>{}}
 const document = {
   documentElement:{lang:'en'},body,
   querySelector:selector=>selector==='.header-inner'?{append:()=>{}}:null,
