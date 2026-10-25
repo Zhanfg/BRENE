@@ -239,41 +239,7 @@ exec('susfs show enabled_features').then((result) => {
 	container.innerText = result.stdout.replaceAll('CONFIG_KSU_SUSFS_', '')
 })
 
-// Load Suspicious Mounts
-exec(`cat /proc/1/mountinfo | grep -E "^2[0-9]{9,} .*$|KSU" | awk '{print $5}'`).then((result) => {
-	const container = document.getElementById('suspicious_mounts')
-
-	if (result.errno !== 0) {
-		container.innerText = 'Failed to load'
-		return
-	}
-
-	if (result.stdout.length > 0) {
-		container.innerText = result.stdout
-	} else {
-		container.innerText = '0'
-	}
-})
-
-// Load logs
-exec(`cat ${PERSISTENT_DIR}/log.txt`).then((result) => {
-	const container = document.getElementById('logs')
-
-	if (result.errno !== 0) {
-		container.textContent += '无法读取日志'
-		return
-	}
-	container.textContent += result.stdout
-	container.textContent += '\n'
-
-	exec(`cat ${PERSISTENT_DIR}/logs.txt`).then((result) => {
-		if (result.errno !== 0) {
-			container.textContent += '无法读取日志'
-			return
-		}
-		container.textContent += result.stdout
-	})
-})
+// Mount diagnostics and log handling are centralized in diagnostics.js.
 
 // Load brene version
 exec(`grep "^version=" ${MODDIR}/module.prop | cut -d'=' -f2`).then((result) => {
