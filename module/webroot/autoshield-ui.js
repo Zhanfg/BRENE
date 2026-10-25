@@ -37,6 +37,10 @@ async function handle(action) {
       toast(message)
     }
     if (action === 'enable') {
+      const capabilities = await run('sh ' + TOOL + ' status')
+      if (capabilities.includes('SUS_MAP：未报告支持')) {
+        throw new Error('当前内核尚未报告 SUS_MAP；没有启用自动应用')
+      }
       // Fixed trusted flag and filesystem path; user-provided text is never interpolated.
       await run("sed -i 's/^config_auto_hide=.*/config_auto_hide=1/' " + CFG)
       const message = await run('sh ' + TOOL + ' apply')
