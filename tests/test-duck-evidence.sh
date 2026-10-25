@@ -29,6 +29,7 @@ BRENE_AUDIT_MOUNTINFO="$T/mountinfo" \
 sh module/tools/duck-evidence-audit.sh
 REPORT=$(find "$T" -maxdepth 1 -name 'BRENE_Duck_Evidence_*.txt' | head -n 1)
 test -n "$REPORT"
+cat "$REPORT"
 grep -q '12944 KiB Swap=27536 KiB' "$REPORT"
 grep -q '2120 KiB Swap=0 KiB' "$REPORT"
 if grep -q '900 KiB' "$REPORT"; then
