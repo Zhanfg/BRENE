@@ -425,6 +425,12 @@ if [[ "${config_fix_data_local_tmp_inconsistencies}" == "1" ]]; then
 	${SUSFS_BIN} add_sus_kstat_statically "${target_folder}" '100' 'default' 'default' '4096' 'default' 'default' 'default' 'default' 'default' 'default' '8' '4096'
 fi
 
+# AutoShield runs once in late boot when manually enabled. It scans only
+# installed module native libraries and never alters the legacy custom rules.
+if [[ -f "${MODDIR}/autoshield.sh" && "${config_auto_hide:-0}" == "1" ]]; then
+	/system/bin/sh "${MODDIR}/autoshield.sh" apply >> "${PERSISTENT_DIR}/autoshield-boot.log" 2>&1
+fi
+
 # Refresh previously registered dynamic KSTAT rules after module mounts.
 if [[ -f "${MODDIR}/kstat-rules.sh" ]]; then
 	/system/bin/sh "${MODDIR}/kstat-rules.sh" post
