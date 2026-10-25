@@ -32,8 +32,12 @@ valid_candidate() {
   mod=${file%%/zygisk/*}
   id=${mod##*/}
   case "$id" in ''|*[!a-zA-Z0-9._-]*|brene) return 1 ;; esac
-  [ -d "$mod" ] && [ ! -L "$mod" ] &&
+  [ -d "$mod" ] && [ ! -L "$mod" ] && [ ! -L "$mod/zygisk" ] &&
     [ ! -f "$mod/disable" ] && [ ! -f "$mod/remove" ] || return 1
+  child=${file#"$mod/zygisk/"}
+  case "$child" in
+    */*) subdir=${child%%/*}; [ ! -L "$mod/zygisk/$subdir" ] || return 1 ;;
+  esac
   return 0
 }
 scan() {
