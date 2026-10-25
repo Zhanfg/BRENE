@@ -25,17 +25,25 @@
 			</div>
 		</header>
 
-		<nav class="tab-bar" id="tab-bar">
-			<button class="tab-btn active" data-tab="home">Home</button>
-			<button class="tab-btn" data-tab="android">Android</button>
-			<button class="tab-btn" data-tab="hiding">Hiding</button>
-			<button class="tab-btn" data-tab="spoofing">Spoofing</button>
-			<button class="tab-btn" data-tab="susfs">SuSFS</button>
-			<button class="tab-btn" data-tab="ksu">KSU</button>
-			<button class="tab-btn" data-tab="rom">ROM</button>
-			<button class="tab-btn" data-tab="advanced">Advanced</button>
-			<button class="tab-btn" data-tab="info">Info</button>
+		<nav class="tab-bar" id="tab-bar" aria-label="主导航">
+			<button type="button" class="dock-btn active" data-group="overview" aria-label="概览" aria-current="page">
+				<svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></svg><span>概览</span>
+			</button>
+			<button type="button" class="dock-btn" data-group="privacy" aria-label="隐私">
+				<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg><span>隐私</span>
+			</button>
+			<button type="button" class="dock-btn" data-group="kernel" aria-label="内核">
+				<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4M2 15h4m12-6h4m-4 6h4"/></svg><span>内核</span>
+			</button>
+			<button type="button" class="dock-btn" data-group="tools" aria-label="工具">
+				<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 6a4 4 0 0 0 5 5l-9 9a2 2 0 0 1-3-3l9-9a4 4 0 0 0-5-5l3 3-3 3"/></svg><span>工具</span>
+			</button>
+			<button type="button" class="dock-btn" data-group="diagnostics" aria-label="诊断">
+				<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8m-8 4h8m-8 4h5"/></svg><span>诊断</span>
+			</button>
 		</nav>
+		<nav class="subnav" id="subnav" aria-label="当前分类" hidden></nav>
+
 
 		<div class="preload-hidden">
 			<section class="tab-panel active" data-panel="home">
@@ -878,29 +886,34 @@
 			</section>
 
 			<section class="tab-panel" data-panel="info">
-				<p class="section-label">Suspicious Mounts</p>
-				<div class="card-group">
-					<div class="mono-block enabled-config" id="suspicious_mounts"></div>
+				<header class="diagnostics-heading">
+					<h2>运行诊断</h2>
+					<p>只读检查当前环境；不会修改挂载或内核状态。</p>
+				</header>
+				<div class="brene-panel-card" id="mount-diagnostics">
+					<div class="brene-card-heading"><h3>挂载来源与异常线索</h3><span class="brene-source-label">init · /proc/1/mountinfo</span></div>
+					<p class="brene-helper">这里检查可见挂载标记与 overlayfs。即使显示“无命中”，也不代表 DuckDetector 的独立进程检测通过。</p>
+					<div id="mount_summary" role="status" class="brene-summary">正在读取挂载信息…</div>
+					<pre class="brene-diagnostic-detail" id="suspicious_mounts">等待结果…</pre>
 				</div>
-
-				<p class="section-label">BRENE Logs</p>
-				<div class="card-group">
-					<div class="card-row">
-						<div class="card-row__body">
-							<span class="card-row__title">BRENE Logs</span>
-							<span class="card-row__sub">Enable or disable BRENE Logs</span>
-						</div>
-						<md-switch icons id="brene_logs"></md-switch>
-						<md-ripple></md-ripple>
+				<div class="brene-panel-card" id="log-panel">
+					<div class="brene-card-heading">
+						<div><h3>BRENE 运行日志</h3><p class="brene-helper">查看启动及规则应用记录</p></div>
+						<md-switch icons id="brene_logs" aria-label="开启 BRENE 日志"></md-switch>
 					</div>
+					<div class="brene-log-content"><pre id="logs" role="log" aria-live="polite">正在读取日志…</pre></div>
 				</div>
-				<div class="card-group">
-					<div class="mono-block enabled-config" id="logs"></div>
+				<div class="brene-panel-card" id="duck-diagnostics">
+					<div class="brene-card-heading"><h3>DuckDetector 核对</h3></div>
+					<p class="brene-helper">此前报告的 Mount/Memory 警告尚未消除或复测。可生成设备证据文件，比较异常是否来自真实挂载或共享内存统计。</p>
+					<button class="brene-secondary-action" id="duck-audit-button" type="button">生成只读检测报告</button>
+					<p class="brene-helper" id="duck-audit-status" role="status">报告仅保存在本机 Download，不上传网络。</p>
 				</div>
 			</section>
 		</div>
 
 		<script type="module" src="./script.js"></script>
+		<script type="module" src="./navigation.js"></script>
 		<script type="module" src="./kstat-ui.js"></script>
 		<script type="module" src="./autoshield-ui.js"></script>
 		<script type="module" src="./locale.js"></script>
