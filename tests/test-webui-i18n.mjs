@@ -34,12 +34,14 @@ const button = {
 }
 const parent = {closest:selector=>null}
 const home = {nodeType:3,nodeValue:'Home',parentElement:parent}
+const auto = {nodeType:3,nodeValue:'扫描与预览',parentElement:parent}
+const nodes = [home,auto]
 const body = {nodeType:1,matches:()=>false,querySelectorAll:()=>[],getAttribute:()=>null,setAttribute:()=>{}}
 const document = {
   documentElement:{lang:'en'},body,
   querySelector:selector=>selector==='.header-inner'?{append:()=>{}}:null,
   createElement:()=>button,
-  createTreeWalker:()=>{let i=0;return{currentNode:null,nextNode(){if(i++>0)return false;this.currentNode=home;return true}}}
+  createTreeWalker:()=>{let i=0;return{currentNode:null,nextNode(){if(i>=nodes.length)return false;this.currentNode=nodes[i++];return true}}}
 }
 class FakeObserver {
   constructor(callback){activeObserver=callback}
@@ -53,12 +55,15 @@ const context = {
 }
 vm.runInNewContext(locale,context,{filename:'locale.js'})
 assert.equal(home.nodeValue,'概览','Simplified Chinese should be default')
+assert.equal(auto.nodeValue,'扫描与预览')
 assert.equal(document.documentElement.lang,'zh-CN')
 assert.equal(button.textContent,'EN')
 listeners.get('click')()
 assert.equal(home.nodeValue,'Home','English toggle should restore source')
+assert.equal(auto.nodeValue,'Scan and preview','English toggle should translate the Chinese-sourced AutoShield UI')
 listeners.get('click')()
 assert.equal(home.nodeValue,'概览','Chinese toggle should restore translation')
+assert.equal(auto.nodeValue,'扫描与预览','AutoShield source should round-trip to Chinese')
 home.nodeValue='Status: Installed'
 activeObserver([{type:'characterData',target:home}])
 assert.equal(home.nodeValue,'状态：已安装','dynamic updates must be translated')
