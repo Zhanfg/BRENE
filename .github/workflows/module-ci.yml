@@ -33,6 +33,10 @@ jobs:
           node --check module/webroot/locale.js
           node --check module/webroot/kstat-ui.js
           node --check module/webroot/autoshield-ui.js
+          node --check module/webroot/navigation.js
+          node --check module/webroot/diagnostics.js
+      - name: Validate mobile floating dock and mount/log layout
+        run: node tests/test-dock-layout.mjs
       - name: Verify WebUI localization and layout
         run: node tests/test-webui-i18n.mjs
       - name: Verify WebUI and KSTAT wiring
@@ -51,6 +55,12 @@ jobs:
           assert 'custom_static_kstat.txt' in (root/'customize.sh').read_text()
           assert 'config_auto_hide=0' in (root/'config.sh').read_text()
           assert 'autoshield.sh' in (root/'boot-completed.sh').read_text()
+          assert 'diagnostics.js' in page and 'navigation.js' in page
+          assert 'suspicious_mounts' in page and 'mount_summary' in page
+          assert 'SWIPE_THRESHOLD' not in js
+          assert 'cat /proc/1/mountinfo | grep' not in js
+          for x in ('overview','privacy','kernel','tools','diagnostics'):
+              assert f'data-group="{x}"' in page
           assert 'autoshield.sh' in (root/'customize.sh').read_text()
           for item in ('autoshield-ui.js','brene-auto-scan','brene-auto-enable','brene-auto-disable'):
               assert item in page, f'Missing AutoShield WebUI: {item}'
