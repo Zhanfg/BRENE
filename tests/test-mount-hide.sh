@@ -24,7 +24,7 @@ env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BR
 [ ! -f "$work/calls" ]
 sed -i 's/config_mount_hide_auto_bind=0/config_mount_hide_auto_bind=1/' "$work/state/config.sh"
 env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BRENE_TEST_MOUNTINFO="$work/mountinfo" sh module/mount-hide.sh apply
-grep -q 'kernel umount add /system_ext/etc/horae/horae.conf --flags 2' "$work/calls"
+grep -q 'kernel umount add -f 2 /system_ext/etc/horae/horae.conf' "$work/calls"
 ! grep -q 'thermal_zone36' "$work/calls"
 ! grep -q 'eglSubDriver' "$work/calls"
 env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BRENE_TEST_MOUNTINFO="$work/mountinfo" sh module/mount-hide.sh apply
