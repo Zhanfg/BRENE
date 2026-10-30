@@ -26,27 +26,31 @@
 		</header>
 
 		<nav class="tab-bar" id="tab-bar" aria-label="主导航">
-			<button type="button" class="dock-btn active" data-group="overview" aria-label="概览" aria-current="page">
-				<svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></svg><span>概览</span>
-			</button>
-			<button type="button" class="dock-btn" data-group="privacy" aria-label="隐私">
-				<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg><span>隐私</span>
-			</button>
-			<button type="button" class="dock-btn" data-group="kernel" aria-label="内核">
-				<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4M2 15h4m12-6h4m-4 6h4"/></svg><span>内核</span>
-			</button>
-			<button type="button" class="dock-btn" data-group="tools" aria-label="工具">
-				<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 6a4 4 0 0 0 5 5l-9 9a2 2 0 0 1-3-3l9-9a4 4 0 0 0-5-5l3 3-3 3"/></svg><span>工具</span>
-			</button>
-			<button type="button" class="dock-btn" data-group="diagnostics" aria-label="诊断">
-				<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8m-8 4h8m-8 4h5"/></svg><span>诊断</span>
-			</button>
-		</nav>
+  <button type="button" class="dock-btn active" data-group="overview" aria-label="概览" aria-current="page"><span class="dock-glyph"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21h-6v-7H9v7H3z"/></svg></span><span class="dock-label">概览</span></button>
+  <button type="button" class="dock-btn" data-group="privacy" aria-label="隐藏"><span class="dock-glyph"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3 8.5 8 11 5-2.5 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="dock-label">隐藏</span></button>
+  <button type="button" class="dock-btn" data-group="kernel" aria-label="内核"><span class="dock-glyph"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4M2 15h4m12-6h4m-4 6h4"/></svg></span><span class="dock-label">内核</span></button>
+  <button type="button" class="dock-btn" data-group="tools" aria-label="设置"><span class="dock-glyph"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M9 4v6M15 14v6"/></svg></span><span class="dock-label">设置</span></button>
+  <button type="button" class="dock-btn" data-group="diagnostics" aria-label="诊断"><span class="dock-glyph"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8m-8 4h8m-8 4h5"/></svg></span><span class="dock-label">诊断</span></button>
+</nav>
 		<nav class="subnav" id="subnav" aria-label="当前分类" hidden></nav>
 
 
 		<div class="preload-hidden">
 			<section class="tab-panel active" data-panel="home">
+  <div class="brene-panel-card" id="brene-shortcuts">
+    <h3>功能直达</h3>
+    <p class="brene-helper">按功能分类快速进入，不必逐页寻找开关。</p>
+    <div class="brene-jump-grid">
+      <button type="button" data-open-panel="hiding">路径隐藏</button>
+      <button type="button" data-open-panel="spoofing">信息伪装</button>
+      <button type="button" data-open-panel="susfs" data-open-anchor="brene-mount-control">挂载管理</button>
+      <button type="button" data-open-panel="susfs" data-open-anchor="brene-auto-scan">AutoShield</button>
+      <button type="button" data-open-panel="ksu" data-open-anchor="brene-kernel-umount-entry">KernelSU 卸载</button>
+      <button type="button" data-open-panel="rom">ROM 适配</button>
+      <button type="button" data-open-panel="advanced">高级设置</button>
+      <button type="button" data-open-panel="info">诊断与日志</button>
+    </div>
+  </div>
 				<p class="section-label">General</p>
 				<div class="card-group">
 					<div class="card-row" id="device-model">
@@ -461,6 +465,33 @@
 			</section>
 
 			<section class="tab-panel" data-panel="susfs">
+  <div class="brene-panel-card" id="brene-mount-control">
+    <h3>挂载管理 · Mount</h3>
+    <p class="brene-helper">当前内核的 SuSFS 挂载视图隐藏由下方原生开关控制。自动 KernelSU Umount 规则是独立功能，可能导致目标进程无法访问模块文件，默认关闭。</p>
+    <div class="card-row">
+      <div class="card-row__body">
+        <span class="card-row__title">自动收集 Lucky_Control 挂载</span>
+        <span class="card-row__sub">只扫描报告涉及的模块，生成后续隔离进程的卸载候选；不会卸载当前全局挂载。</span>
+      </div>
+      <md-switch icons id="mount_hide_auto_bind"></md-switch>
+    </div>
+    <div class="card-row">
+      <div class="card-row__body">
+        <span class="card-row__title">额外包括热管理节点（危险）</span>
+        <span class="card-row__sub">默认排除 /sys/class/thermal，避免破坏温度监测。仅在明确了解后果时开启。</span>
+      </div>
+      <md-switch icons id="mount_hide_sysfs"></md-switch>
+    </div>
+    <div class="brene-mount-actions">
+      <button type="button" class="brene-secondary-action" id="mount-hide-preview">预览候选</button>
+      <button type="button" class="brene-secondary-action" id="mount-hide-apply">应用规则</button>
+      <button type="button" class="brene-secondary-action" id="mount-hide-refresh">刷新状态</button>
+    </div>
+    <div id="mount-hide-status" class="brene-status" role="status">尚未应用</div>
+    <pre id="mount-hide-preview-output" class="brene-mount-preview">点击预览候选以查看具体路径</pre>
+    <p class="brene-helper">规则只作用于 KernelSU 标记卸载的后续进程，不保证 Android 17 的 zygote_next 隔离服务全部隐藏。关闭自动收集后需重启以清除已注册的内核规则。</p>
+  </div>
+
 				<p class="section-label">Status</p>
 				<div class="card-group">
 					<div class="card-row" id="susfs-variant">
@@ -821,6 +852,7 @@
 			</section>
 
 			<section class="tab-panel" data-panel="ksu">
+  <span id="brene-kernel-umount-entry" class="brene-anchor"></span>
 				<p class="section-label">Module Control</p>
 				<div class="card-group">
 					<div class="field-stack">
