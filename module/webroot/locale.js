@@ -161,10 +161,19 @@ function translate(text) {
   return CN[value]
 }
 const EN_SOURCE = {
+  '功能直达':'Quick access',
+  '按功能分类快速进入，不必逐页寻找开关。':'Jump straight to a function without searching each page.',
+  '挂载管理':'Mount management',
+  '系统选项':'System options',
+  '内核卸载':'Kernel Umount',
+  '诊断与日志':'Diagnostics and logs',
+
   '概览':'Overview',
   '隐私':'Privacy',
+  '隐藏':'Hide',
   '内核':'Kernel',
   '工具':'Tools',
+  '设置':'Settings',
   '诊断':'Diagnostics',
   '路径隐藏':'Path hiding',
   '信息伪装':'Spoofing',
