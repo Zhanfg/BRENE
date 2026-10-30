@@ -40,7 +40,7 @@ fi
 # Probe with the bundled tool before replacing a shared binary.
 chmod 755 "${MODPATH}/tools/susfs"
 susfs_version=$("${MODPATH}/tools/susfs" show version 2>/dev/null)
-if [[ "${susfs_version}" == "v2."* ]]; then
+if [[ "${susfs_version}" == "v2."* || "${susfs_version}" == "v3."* ]]; then
     echo "[✅] Detected SuSFS version: ${susfs_version}"
 else
     abort "[❌] Bundled SuSFS tool cannot communicate with this kernel: ${susfs_version:-unknown}"
@@ -61,7 +61,7 @@ cp -pf "${MODPATH}/tools/susfs" "${PERSISTENT_DIR}/susfs" ||
 cp -f "${MODPATH}/tools/susfs" "${DEST_BIN_DIR}/susfs" ||
     abort '[❌] Failed to install BRENE SuSFS binary'
 chmod 755 "${DEST_BIN_DIR}/susfs"
-chmod +x "${MODPATH}/inotify.sh" "${MODPATH}/remove_ksu_directory.sh" "${MODPATH}/kstat-rules.sh" "${MODPATH}/autoshield.sh"
+chmod +x "${MODPATH}/inotify.sh" "${MODPATH}/remove_ksu_directory.sh" "${MODPATH}/kstat-rules.sh" "${MODPATH}/autoshield.sh" "${MODPATH}/mount-hide.sh"
 ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/sus"
 ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/ksu_susfs"
 
