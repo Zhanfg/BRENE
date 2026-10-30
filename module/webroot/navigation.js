@@ -3,13 +3,13 @@ const GROUPS = [
   {id: 'overview', panels: [{id:'home', title:'概览', english:'Overview'}]},
   {id: 'privacy', panels: [
     {id:'hiding', title:'路径隐藏', english:'Paths'},
-    {id:'spoofing', title:'信息伪装', english:'Spoofing'},
-    {id:'rom', title:'ROM 适配', english:'ROM'}]},
+    {id:'spoofing', title:'信息伪装', english:'Spoofing'}]},
   {id: 'kernel', panels: [
     {id:'susfs', title:'SuSFS', english:'SuSFS'},
     {id:'ksu', title:'KernelSU', english:'KernelSU'}]},
   {id: 'tools', panels: [
-    {id:'android', title:'系统', english:'Android'},
+    {id:'android', title:'系统选项', english:'System'},
+    {id:'rom', title:'ROM 适配', english:'ROM'},
     {id:'advanced', title:'高级设置', english:'Advanced'}]},
   {id: 'diagnostics', panels: [{id:'info', title:'诊断', english:'Diagnostics'}]},
 ];
@@ -86,4 +86,19 @@ window.addEventListener('brene-locale-change',event=>{
   const selected=allPanels.find(p=>p.classList.contains('active'));
   const group=GROUPS.find(g=>g.panels.some(p=>p.id===selected?.dataset.panel));
   if(group) show(group.id,selected.dataset.panel,false);
+});
+
+// Cross-section shortcuts use existing panels and preserve their IDs.
+document.addEventListener?.('click',(event)=>{
+  const button=event.target?.closest?.('[data-open-panel]');
+  if(!button) return;
+  const panelId=button.dataset.openPanel;
+  const group=GROUPS.find(item=>item.panels.some(panel=>panel.id===panelId));
+  if(!group)return;
+  show(group.id,panelId);
+  const anchor=button.dataset.openAnchor;
+  if(anchor){
+    const jump=()=>document.getElementById(anchor)?.scrollIntoView?.({behavior:'smooth',block:'start'});
+    if(typeof requestAnimationFrame==='function') requestAnimationFrame(jump); else jump();
+  }
 });
