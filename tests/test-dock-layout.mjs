@@ -24,6 +24,8 @@ for(const id of ['logs','mount_summary','suspicious_mounts','duck-audit-button']
   assert.ok(ids.includes(id),'missing diagnostic element '+id)
 }
 assert.ok(html.includes('navigation.js')&&html.includes('diagnostics.js'))
+assert.ok(html.includes('id="brene-mount-control"')&&html.includes('data-open-panel="susfs"'))
+assert.ok(modern.includes('.dock-glyph')&&modern.includes('grid-template-rows:26px 16px'))
 
 const createElement=(dataset={})=>{
   const handlers={}
@@ -66,9 +68,16 @@ assert.deepEqual(activePanel(),['home'])
 assert.equal(secondary.hidden,true)
 buttons[1].dispatch('click')
 assert.deepEqual(activePanel(),['hiding'])
-assert.equal(secondary.children.length,3)
+assert.equal(secondary.children.length,2)
 secondary.children[1].dispatch('click')
 assert.deepEqual(activePanel(),['spoofing'])
+buttons[3].dispatch('click')
+assert.deepEqual(activePanel(),['android'])
+assert.equal(secondary.children.length,3)
+secondary.children[1].dispatch('click')
+assert.deepEqual(activePanel(),['rom'])
+secondary.children[2].dispatch('click')
+assert.deepEqual(activePanel(),['advanced'])
 buttons[2].dispatch('click')
 assert.deepEqual(activePanel(),['susfs'])
 assert.equal(secondary.children.length,2)
