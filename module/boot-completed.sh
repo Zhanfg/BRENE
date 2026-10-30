@@ -21,7 +21,7 @@ susfs_version=$(${SUSFS_BIN} show version)
 susfs_features_number=$(${SUSFS_BIN} show enabled_features | wc -l)
 kernel_version=$(cat /proc/version | awk '{print $3}' | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+')
 description="KernelSU module with SuSFS support and more"
-if [[ "${susfs_version}" == "v2"* ]]; then
+if [[ "${susfs_version}" == "v2"* || "${susfs_version}" == "v3"* ]]; then
 	status="Active ✅"
 	${KSU_BIN} module config set override.description "[Status: ${status} | Kernel Version: ${kernel_version} | SuSFS: ${susfs_version} | SuSFS Kernel Features: ${susfs_features_number} enabled] ${description}"
 else
@@ -423,6 +423,11 @@ if [[ "${config_fix_data_local_tmp_inconsistencies}" == "1" ]]; then
 	# ino -> %i, dev -> %d, nlink -> %h, atime -> %X, mtime -> %Y, ctime -> %Z, size -> %s, blocks -> %b, blksize -> %B
 	# Example: stat -c %i <path>
 	${SUSFS_BIN} add_sus_kstat_statically "${target_folder}" '100' 'default' 'default' '4096' 'default' 'default' 'default' 'default' 'default' 'default' '8' '4096'
+fi
+
+# Scoped KSU mount records: disabled by default; never unmount from init.
+if [[ -f "${MODDIR}/mount-hide.sh" ]]; then
+    /system/bin/sh "${MODDIR}/mount-hide.sh" apply >> "${PERSISTENT_DIR}/mount-hide-boot.log" 2>&1
 fi
 
 # AutoShield runs once in late boot when manually enabled. It scans only
