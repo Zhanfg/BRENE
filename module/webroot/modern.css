@@ -403,3 +403,48 @@ md-ripple{display:none!important;pointer-events:none!important}
   .app-header .title{font-size:.95rem}
   .app-header .title .group:not(:first-child){font-size:.69rem}
 }
+
+/* v0.0.75: normalized 5-slot bottom dock metrics, icon/label geometry. */
+#tab-bar.tab-bar {
+  left:50%!important;right:auto!important;
+  transform:translateX(-50%)!important;
+  width:min(580px,calc(100% - 28px))!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  padding:6px!important;gap:2px!important;
+}
+#tab-bar .dock-btn {
+  display:grid!important;
+  grid-template-rows:26px 16px!important;
+  justify-items:center!important;
+  align-content:center!important;
+  width:100%!important;min-height:58px!important;
+  line-height:16px!important;gap:3px!important;
+  padding:6px 1px!important;
+  text-align:center!important;
+}
+#tab-bar .dock-glyph {
+  width:26px;height:26px;display:grid;place-items:center;
+}
+#tab-bar .dock-glyph svg {
+  width:22px!important;height:22px!important;display:block;
+  transform:none;vertical-align:middle;margin:0!important;
+  stroke-width:1.85;fill:none;
+}
+#tab-bar .dock-label {
+  display:block;width:100%;height:16px;
+  text-align:center;line-height:16px;white-space:nowrap;
+  font-size:11px;font-weight:660;
+}
+.brene-jump-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
+.brene-jump-grid button{border:1px solid var(--brene-border);border-radius:13px;padding:11px 7px;min-width:0;background:var(--brene-page);color:var(--brene-text);font:650 13px/1.4 system-ui;cursor:pointer}
+.brene-jump-grid button:focus-visible{outline:2px solid var(--md-sys-color-primary)}
+.brene-mount-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.brene-mount-actions button{flex:1 1 125px;min-width:0}
+.brene-mount-preview{font:12px/1.55 ui-monospace,monospace;color:var(--brene-text);background:var(--brene-page);border:1px solid var(--brene-border);border-radius:12px;padding:12px;max-height:220px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.brene-anchor,.brene-panel-card{scroll-margin-top:14px}
+@media(max-width:340px) {
+  #tab-bar.tab-bar{left:50%!important;right:auto!important;width:calc(100% - 18px)!important}
+  #tab-bar .dock-btn{min-height:54px!important}
+  #tab-bar .dock-label{font-size:10px}
+}
+@media(min-width:780px){.brene-jump-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
