@@ -11,7 +11,7 @@ cat > "$work/mountinfo" <<'EOF'
 EOF
 cat > "$work/ksud" <<EOF
 #!/bin/sh
-printf '%s\\n' "\$*" >> "$work/calls"
+printf '%s\n' "\$*" >> "$work/calls"
 exit 0
 EOF
 chmod 755 "$work/ksud"
@@ -19,7 +19,7 @@ env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BR
 grep -qx '/system_ext/etc/horae/horae.conf|system' "$work/candidates"
 grep -qx '/sys/devices/virtual/thermal/thermal_zone36/temp|thermal' "$work/candidates"
 [ "$(wc -l < "$work/candidates")" -eq 2 ]
-printf '%s\\n' 'config_mount_hide_auto_bind=0' 'config_kernel_umount=1' 'config_mount_hide_sysfs=0' > "$work/state/config.sh"
+printf '%s\n' 'config_mount_hide_auto_bind=0' 'config_kernel_umount=1' 'config_mount_hide_sysfs=0' > "$work/state/config.sh"
 env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BRENE_TEST_MOUNTINFO="$work/mountinfo" sh module/mount-hide.sh apply
 [ ! -f "$work/calls" ]
 sed -i 's/config_mount_hide_auto_bind=0/config_mount_hide_auto_bind=1/' "$work/state/config.sh"
