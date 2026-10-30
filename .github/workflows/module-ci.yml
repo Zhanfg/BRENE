@@ -19,6 +19,7 @@ jobs:
           for file in module/*.sh; do bash -n "$file"; done
           sh -n module/kstat-rules.sh
           sh -n module/autoshield.sh
+          sh -n module/mount-hide.sh
           sh -n module/tools/duck-evidence-audit.sh
           sh -n module/tools/duck-evidence-watch.sh
           sh -n module/tools/gpu-v891-payload-audit.sh
@@ -40,6 +41,8 @@ jobs:
           test ! -d "$T/.duck-watch.lock"
       - name: AutoShield discovery / apply dry-run tests
         run: sh tests/test-autoshield.sh
+      - name: Mount rules opt-in and exclusion regression
+        run: sh tests/test-mount-hide.sh
       - name: KSTAT parser dry-run tests
         run: sh tests/test-kstat.sh
       - name: Check WebUI JavaScript syntax
