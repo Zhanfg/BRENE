@@ -52,6 +52,8 @@ const configs = [
 			setFeature(`resetprop -n persist.sys.fflag.override.settings_enable_monitor_phantom_procs ${enabled ? false : true}`)
 		},
 	},
+	{ id: 'mount_hide_auto_bind' },
+	{ id: 'mount_hide_sysfs' },
 	{ id: 'pif_props' },
 	{ id: 'rom_props' },
 	{ id: 'brene_logs' },
@@ -565,3 +567,28 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 })()
 
 // Navigation is managed by navigation.js. Original panel IDs remain unchanged.
+
+
+/* Mount manager — scoped, opt-in, not an init namespace umount. */
+const mountHideBase='/data/adb/modules/brene/mount-hide.sh';
+const mountHideStatus=document.getElementById('mount-hide-status');
+const mountHidePreview=document.getElementById('mount-hide-preview-output');
+async function refreshMountRules(){
+  if(!mountHideStatus)return;
+  try {
+    const r=await exec('sh '+mountHideBase+' report');
+    mountHideStatus.textContent=r.errno===0?r.stdout.trim():(r.stderr||'状态读取失败');
+  } catch(error){mountHideStatus.textContent=String(error)}
+}
+document.getElementById('mount-hide-preview')?.addEventListener('click',async()=>{
+  if(!mountHidePreview)return;
+  const r=await exec('sh '+mountHideBase+' collect');
+  mountHidePreview.textContent=r.errno!==0?'扫描失败：'+(r.stderr||'无法读取 init mountinfo'):(r.stdout.trim()||'没有发现 Lucky_Control 模块挂载');
+});
+document.getElementById('mount-hide-refresh')?.addEventListener('click',refreshMountRules);
+document.getElementById('mount-hide-apply')?.addEventListener('click',async()=>{
+  const r=await exec('sh '+mountHideBase+' apply');
+  toast(r.errno===0?'规则执行完成，请查看状态':'执行失败，请查看状态与日志');
+  await refreshMountRules();
+});
+refreshMountRules();
