@@ -101,13 +101,15 @@ try{
     if(scenario.name==='mobile-393'){
       await page.screenshot({path:path.join(out,'mobile-393-privacy.png'),fullPage:true})
     }
-    await page.locator('#subnav button').nth(2).click()
-    assert.ok(await page.locator('[data-panel=rom]').isVisible(),scenario.name+' ROM panel')
+    await page.locator('#subnav button').nth(1).click()
+    assert.ok(await page.locator('[data-panel=spoofing]').isVisible(),scenario.name+' spoofing panel')
     await page.locator('[data-group=kernel]').click()
     await page.locator('#subnav button').nth(1).click()
     assert.ok(await page.locator('[data-panel=ksu]').isVisible(),scenario.name+' KSU panel')
     await page.locator('[data-group=tools]').click()
     await page.locator('#subnav button').nth(1).click()
+    assert.ok(await page.locator('[data-panel=rom]').isVisible(),scenario.name+' ROM panel')
+    await page.locator('#subnav button').nth(2).click()
     assert.ok(await page.locator('[data-panel=advanced]').isVisible(),scenario.name+' advanced panel')
     await page.locator('[data-group=diagnostics]').click()
     await page.waitForFunction(()=>{
