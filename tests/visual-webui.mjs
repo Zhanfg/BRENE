@@ -81,10 +81,16 @@ try{
         width:innerWidth,scrollWidth:document.documentElement.scrollWidth,
         dockPosition:getComputedStyle(document.querySelector('#tab-bar')).position,
         overflowX:getComputedStyle(document.querySelector('#tab-bar')).overflowX,
-        navCount:left.length,active
+        navCount:left.length,active,
+        glyphGeometry:[...left].map(btn=>{ const b=btn.getBoundingClientRect(); const icon=btn.querySelector('.dock-glyph').getBoundingClientRect(); const label=btn.querySelector('.dock-label').getBoundingClientRect(); return {buttonCenter:(b.left+b.right)/2,iconCenter:(icon.left+icon.right)/2,labelCenter:(label.left+label.right)/2,iconTop:icon.top,labelTop:label.top} })
       }
     })
     assert.equal(baseline.navCount,5,scenario.name+' dock must have five visible buttons')
+    for (const g of baseline.glyphGeometry) {
+      assert.ok(Math.abs(g.buttonCenter-g.iconCenter)<=1.5,scenario.name+' dock icon off center')
+      assert.ok(Math.abs(g.buttonCenter-g.labelCenter)<=1.5,scenario.name+' dock label off center')
+      assert.ok(g.labelTop>=g.iconTop+20,scenario.name+' dock label overlaps glyph')
+    }
     assert.equal(baseline.dockPosition,'fixed',scenario.name+' dock must float')
     assert.equal(baseline.overflowX,'visible',scenario.name+' dock must not scroll')
     assert.ok(baseline.dockLeft>=-1&&baseline.dockRight<=scenario.width+1,scenario.name+' dock overflow')
@@ -131,7 +137,7 @@ try{
     await page.locator('[data-group=overview]').click()
     const locale=page.locator('#brene-locale-button')
     await locale.click()
-    const overview=await page.locator('.dock-btn[data-group=overview] span').textContent()
+    const overview=await page.locator('.dock-btn[data-group=overview] .dock-label').textContent()
     assert.equal(overview?.trim(),'Overview',scenario.name+' language toggling failed')
     await page.close()
     console.log('PASS',scenario.name,JSON.stringify({top:baseline.headerTop,dock:baseline.dockPosition,overlay:diag.summary}))
