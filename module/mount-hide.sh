@@ -61,7 +61,6 @@ case "${1:-report}" in
       printf '# %s\n' "$boot_id" > "$APPLIED"
     fi
     count=0; registered=0; existing=0; skipped=0; failed=0
-    "$KSU" kernel notify-module-mounted >> "$LOG" 2>&1 || log 'notify-module-mounted is unavailable'
     while IFS='|' read -r path category; do
       [ -n "$path" ] || continue
       count=$((count+1))
@@ -75,7 +74,7 @@ case "${1:-report}" in
         *[!a-zA-Z0-9_./:+@=-]*) skipped=$((skipped+1)); continue;;
       esac
       if grep -Fqx -- "$path" "$APPLIED"; then existing=$((existing+1)); continue; fi
-      if "$KSU" kernel umount add "$path" --flags 2 >> "$LOG" 2>&1; then
+      if "$KSU" kernel umount add -f 2 "$path" >> "$LOG" 2>&1; then
         registered=$((registered+1)); printf '%s\n' "$path" >> "$APPLIED"
       else
         failed=$((failed+1)); log "FAILED: $path"
