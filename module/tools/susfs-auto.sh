@@ -163,8 +163,11 @@ case "$MODE" in
  mounted) mounted ;;
  late) late ;;
  status)
-   if [ -r "$PROFILE" ]; then cat "$PROFILE"
-   elif [ -r "$STATUS" ]; then cat "$STATUS"
-   else printf '%s\n' '状态：尚未安装或检测内核能力'; fi ;;
+   # Show the latest runtime result before the cached fingerprint: stale profiles
+   # must not disguise a failed probe or rejected kernel command.
+   if [ -r "$STATUS" ]; then cat "$STATUS"
+   else printf '%s\n' '状态：尚未执行自动内核适配'; fi
+   [ ! -r "$PROFILE" ] || cat "$PROFILE"
+   ;;
  *) printf '%s\n' 'Usage: susfs-auto.sh install|probe|early|mounted|late|status' >&2; exit 2 ;;
 esac
