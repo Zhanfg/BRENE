@@ -161,6 +161,18 @@ function translate(text) {
   return CN[value]
 }
 const EN_SOURCE = {
+  'SuSFS 能力与配置管理':'SuSFS capabilities and configuration',
+  '实时读取内核报告，不将未编译的内核功能伪装成可启用开关。':'Reads kernel-reported features; does not invent toggles for uncompiled features.',
+  '刷新内核能力':'Refresh kernel capabilities',
+  '正在读取内核能力…':'Reading kernel capabilities…',
+  '配置快照':'Configuration snapshots',
+  '仅备份当前 BRENE 的白名单配置文件，存放在本机 Root 私有目录，不自动上传。恢复前再次备份当前设置。':'Backs up only approved BRENE config files to a root-private location. No upload; a safety backup precedes restore.',
+  '备份当前配置':'Back up configuration',
+  '恢复最新备份':'Restore latest backup',
+  '没有执行备份操作':'No backup operation performed',
+  '挂载排除规则':'Mount exclusions',
+  '每行一个绝对目标路径，末尾 / 表示排除整个目录；不会修改原始文件。将必须保留的相机与温控挂载加入排除。':'One absolute target path per line; a trailing / excludes a directory prefix. Original files are never modified. Exclude critical camera and thermal mounts.',
+  '保存排除规则':'Save exclusions',
   '功能直达':'Quick access',
   '路径隐藏':'Path hiding',
   '信息伪装':'Spoofing',
