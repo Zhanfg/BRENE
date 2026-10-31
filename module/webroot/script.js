@@ -261,7 +261,7 @@ function shellQuote(input) {
 }
 function safeSaveTextFile(filename, content) {
  const allowed = new Set(['custom_sus_map.txt','custom_sus_path.txt','custom_sus_path_loop.txt',
-  'custom_open_redirect.txt','custom_kernel_umount.txt'])
+  'custom_open_redirect.txt','custom_kernel_umount.txt','mount-hide-exclude.txt'])
  if(!allowed.has(filename)) return Promise.resolve({errno:1,stderr:'Invalid target'})
  const bytes = new TextEncoder().encode(content)
  if(bytes.length > 65536) return Promise.resolve({errno:1,stderr:'Too much text (64 KiB limit)'})
@@ -582,7 +582,7 @@ async function refreshMountRules(){
 }
 document.getElementById('mount-hide-preview')?.addEventListener('click',async()=>{
   if(!mountHidePreview)return;
-  const r=await exec('sh '+mountHideBase+' collect');
+  const r=await exec('sh '+mountHideBase+' preview');
   mountHidePreview.textContent=r.errno!==0?'扫描失败：'+(r.stderr||'无法读取 init mountinfo'):(r.stdout.trim()||'没有发现 Lucky_Control 模块挂载');
 });
 document.getElementById('mount-hide-refresh')?.addEventListener('click',refreshMountRules);
@@ -592,3 +592,47 @@ document.getElementById('mount-hide-apply')?.addEventListener('click',async()=>{
   await refreshMountRules();
 });
 refreshMountRules();
+
+
+/* SuSFS management utilities: read-only capability audit and private snapshots. */
+const susfsToolRoot='/data/adb/modules/brene/tools/';
+const featureOutput=document.getElementById('brene-feature-audit');
+const snapshotStatus=document.getElementById('brene-snapshot-status');
+async function refreshFeatureAudit(){
+ if(!featureOutput)return;
+ const r=await exec('sh '+susfsToolRoot+'susfs-capability-audit.sh');
+ featureOutput.textContent=r.errno===0?r.stdout.trim():(r.stdout.trim()||r.stderr||'能力检测失败');
+}
+document.getElementById('brene-feature-refresh')?.addEventListener('click',refreshFeatureAudit);
+refreshFeatureAudit().catch(()=>{});
+document.getElementById('brene-snapshot-backup')?.addEventListener('click',async()=>{
+ const r=await exec('sh '+susfsToolRoot+'susfs-snapshot.sh backup');
+ if(snapshotStatus)snapshotStatus.textContent=r.errno===0?'已保存在 /data/adb/brene/snapshots/'+r.stdout.trim():(r.stderr||'备份失败');
+ toast(r.errno===0?'配置快照已建立':'配置快照失败');
+});
+document.getElementById('brene-snapshot-restore')?.addEventListener('click',async()=>{
+ const list=await exec('sh '+susfsToolRoot+'susfs-snapshot.sh list');
+ const id=(list.stdout||'').split(/\r?\n/).map(x=>x.trim()).find(x=>/^\d{8}_\d{6}(?:_\d+)?$/.test(x));
+ if(list.errno!==0||!id){
+  if(snapshotStatus)snapshotStatus.textContent='没有可恢复的本地快照';
+  return;
+ }
+ if(!window.confirm('恢复最新配置 '+id+'？BRENE 将先备份当前配置；恢复后需要重启。'))return;
+ const r=await exec('sh '+susfsToolRoot+'susfs-snapshot.sh restore '+id);
+ if(snapshotStatus)snapshotStatus.textContent=r.errno===0?r.stdout.trim():(r.stderr||'恢复失败');
+ toast(r.errno===0?'配置已恢复，请重启':'恢复失败');
+});
+const excludeField=document.getElementById('brene-mount-excludes');
+exec('cat /data/adb/brene/mount-hide-exclude.txt').then(r=>{
+ if(excludeField)excludeField.value=r.errno===0?r.stdout:'';
+}).catch(()=>{});
+document.getElementById('brene-mount-excludes-save')?.addEventListener('click',async()=>{
+ if(!excludeField)return;
+ const lines=excludeField.value.split(/\r?\n/);
+ if(lines.some(l=>l.trim()&&!l.startsWith('#')&&!/^\/[a-zA-Z0-9_./:+@=-]+$/.test(l))){
+  toast('排除规则只能是绝对路径、目录前缀或注释');
+  return;
+ }
+ const r=await safeSaveTextFile('mount-hide-exclude.txt',excludeField.value);
+ toast(r.errno===0?'排除规则已保存；下次应用时生效':(r.stderr||'保存失败'));
+});
