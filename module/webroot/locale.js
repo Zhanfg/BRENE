@@ -161,6 +161,14 @@ function translate(text) {
   return CN[value]
 }
 const EN_SOURCE = {
+  'SuSFS 二进制更新':'SuSFS binary updates',
+  '自动检查及安全更新':'Automatic verified updates',
+  '离线安装仍可用；回滚时自动暂停后续更新。':'Offline installation stays available; rollback pauses further automatic updates.',
+  '检查可信版本':'Check trusted version',
+  '立即更新':'Update now',
+  '恢复上一版本':'Restore previous version',
+  '正在读取二进制更新状态…':'Reading binary update status…',
+  '安装时自动检查可信上游固定版本；下载的 ARM64 程序必须通过 SHA-256、ELF 类型和当前内核接口验证。未验证的远程版本不会被执行或覆盖到系统。每次开机还会按间隔检查。':'Checks a pinned upstream revision on install and periodically after boot. SHA-256, ARM64 ELF type and runtime kernel compatibility are required before execution or replacement.',
   '自动内核适配':'Automatic kernel adaptation',
   '自动适配（默认开启）':'Automatic adaptation (enabled by default)',
   '重新探测并保存':'Recheck and save',
