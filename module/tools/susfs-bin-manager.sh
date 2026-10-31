@@ -125,6 +125,7 @@ case "$MODE" in
    atomic_copy "$STAGED" "$BASE/susfs.selected" || exit 1
    rm -f "$STAGED"; trap - EXIT HUP INT TERM
    state '状态：已验证上游固定提交和 SHA-256，安装将使用受信任版本'
+   date +%s > "$BASE/binary-update.last-check"
    printf '%s\n' "$BASE/susfs.selected"
    exit 0
   fi
@@ -138,6 +139,25 @@ case "$MODE" in
   fi
   state '状态：未找到兼容二进制，未替换共享文件'
   exit 1 ;;
+ scheduled)
+  enabled || exit 0
+  # Run in late-boot background; never block Zygote or install completion.
+  stamp="$BASE/binary-update.last-check"
+  now=$(date +%s 2>/dev/null)
+  case "$now" in ''|*[!0-9]*) now=0;; esac
+  previous=$(cat "$stamp" 2>/dev/null)
+  case "$previous" in ''|*[!0-9]*) previous=0;; esac
+  if [ "$now" -gt 0 ] && [ "$previous" -gt 0 ] && [ "$now" -ge "$previous" ] && [ $((now-previous)) -lt 86400 ]; then
+    exit 0
+  fi
+  printf '%s\n' "$now" > "$stamp"
+  chmod 600 "$stamp" 2>/dev/null || :
+  if check_sha "$BIN"; then
+    state '状态：当前已是可信固定版本；继续保留，等待更新可信源记录'
+    exit 0
+  fi
+  "$0" update
+  ;;
  check)
   if stage; then
    rm -f "$STAGED"; trap - EXIT HUP INT TERM
@@ -177,6 +197,10 @@ case "$MODE" in
   [ -f "$ROLLBACK" ] && [ ! -L "$ROLLBACK" ] || { state '状态：无回退文件'; exit 1; }
   atomic_copy "$ROLLBACK" "$BIN" || { state '状态：回退失败'; exit 1; }
   atomic_copy "$BIN" "$BASE/susfs" || :
-  state '状态：已恢复上一份二进制，建议重启' ;;
- *) printf '%s\n' 'Usage: susfs-bin-manager.sh status|select [bundled]|check|update|rollback' >&2; exit 2 ;;
+  # An explicit rollback must not be silently reversed on the next boot.
+  if [ -f "$CONFIG" ] && grep -q '^config_susfs_binary_auto_update=' "$CONFIG"; then
+    sed -i 's/^config_susfs_binary_auto_update=.*/config_susfs_binary_auto_update=0/' "$CONFIG"
+  fi
+  state '状态：已回滚并暂停自动更新；检查兼容性后可重新开启' ;;
+ *) printf '%s\n' 'Usage: susfs-bin-manager.sh status|select [bundled]|check|update|scheduled|rollback' >&2; exit 2 ;;
 esac
