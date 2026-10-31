@@ -23,6 +23,7 @@ jobs:
           sh -n module/tools/susfs-capability-audit.sh
           sh -n module/tools/susfs-snapshot.sh
           sh -n module/tools/susfs-auto.sh
+          sh -n module/tools/susfs-bin-manager.sh
           sh -n module/post-mount.sh
           sh -n module/tools/duck-evidence-audit.sh
           sh -n module/tools/duck-evidence-watch.sh
@@ -51,6 +52,18 @@ jobs:
         run: sh tests/test-susfs-toolkit.sh
       - name: Auto SuSFS install and boot policy regression
         run: sh tests/test-susfs-auto.sh
+      - name: Trusted online binary update, ABI and rollback regression
+        run: sh tests/test-susfs-binary-manager.sh
+      - name: Validate pinned upstream binary checksum and ARM64 format
+        run: |
+          set -euo pipefail
+          REV=041f69d7fe23a7bd928f9bd90eb3535774d00456
+          PIN=8a626ce3bae27a7bcaa2e7f5f7b91e786ecc57f8e57d19c7856719a89b54b6fa
+          URL="https://raw.githubusercontent.com/sidex15/susfs4ksu-binaries/$REV/ksu_susfs_arm64"
+          curl --fail --location --silent --show-error --retry 2 --max-time 20 "$URL" -o /tmp/brene-susfs-upstream.bin
+          printf '%s  %s\n' "$PIN" /tmp/brene-susfs-upstream.bin | sha256sum --check
+          file /tmp/brene-susfs-upstream.bin | grep -E 'ELF 64-bit.*ARM aarch64|ELF 64-bit.*aarch64'
+
       - name: KSTAT parser dry-run tests
         run: sh tests/test-kstat.sh
       - name: Check WebUI JavaScript syntax
@@ -96,6 +109,8 @@ jobs:
           assert 'config_use_custom_cmdline_or_bootconfig=0' in (root/'config.sh').read_text()
           assert 'susfs.previous' in (root/'customize.sh').read_text()
           assert 'susfs.previous' in (root/'uninstall.sh').read_text()
+          assert 'susfs-bin-manager.sh' in (root/'customize.sh').read_text()
+          assert 'susfs-bin-manager.sh' in (root/'boot-completed.sh').read_text()
           for x in ('brene-static-kstat-save','brene-boot-save','brene-feature-matrix'):
               assert x in page, f'Missing advanced control: {x}'
           source=(root/'webroot/kstat-ui.js').read_text()
