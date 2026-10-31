@@ -669,7 +669,7 @@ document.getElementById('brene-binary-check')?.addEventListener('click',async()=
 });
 document.getElementById('brene-binary-apply')?.addEventListener('click',async()=>{
  if(!window.confirm('将验证受信任二进制，并在可兼容时替换系统共享工具。继续？'))return;
- const r=await exec('sh '+binaryUpdaterPath+' update');
+ const r=await exec('sh '+binaryUpdaterPath+' manual-update');
  toast(r.errno===0?'更新流程已完成，请查看状态':'更新被拒绝或失败，已保留原版本');
  await showBinaryStatus();
 });
