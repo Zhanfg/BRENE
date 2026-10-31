@@ -52,6 +52,7 @@ const configs = [
 			setFeature(`resetprop -n persist.sys.fflag.override.settings_enable_monitor_phantom_procs ${enabled ? false : true}`)
 		},
 	},
+	{ id: 'susfs_auto_enable' },
 	{ id: 'mount_hide_auto_bind' },
 	{ id: 'mount_hide_sysfs' },
 	{ id: 'pif_props' },
@@ -636,3 +637,17 @@ document.getElementById('brene-mount-excludes-save')?.addEventListener('click',a
  const r=await safeSaveTextFile('mount-hide-exclude.txt',excludeField.value);
  toast(r.errno===0?'排除规则已保存；下次应用时生效':(r.stderr||'保存失败'));
 });
+
+/* Persisted Auto SuSFS lifecycle status (no manual action is required). */
+const autoProfileOutput=document.getElementById('brene-auto-profile');
+async function showAutoProfile(){
+ if(!autoProfileOutput)return;
+ const r=await exec('sh /data/adb/modules/brene/tools/susfs-auto.sh status');
+ autoProfileOutput.textContent=r.errno===0?r.stdout.trim():(r.stderr||'无法读取自动适配状态');
+}
+document.getElementById('brene-auto-profile-refresh')?.addEventListener('click',async()=>{
+ const r=await exec('sh /data/adb/modules/brene/tools/susfs-auto.sh probe');
+ toast(r.errno===0?'内核能力已重新探测并持久化':'自动探测失败，保留当前配置');
+ await showAutoProfile();
+});
+showAutoProfile().catch(()=>{});
