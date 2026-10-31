@@ -76,4 +76,11 @@ grep -q 'old, bundled' "$work/bin/susfs"
 sed -i 's/config_susfs_binary_auto_update=1/config_susfs_binary_auto_update=0/' "$work/base/config.sh"
 choice=$(sh "$manager" select "$work/bin/susfs")
 test "$choice" = "$work/bin/susfs"
+# The manual update action can be invoked even when automatic updates are disabled.
+BRENE_BIN_FIXTURE="$work/upstream"
+BRENE_BIN_PIN=$(sha256sum "$work/upstream" | awk '{print $1}')
+export BRENE_BIN_FIXTURE BRENE_BIN_PIN
+sh "$manager" manual-update
+cmp "$work/bin/susfs" "$work/upstream"
+grep -qx 'config_susfs_binary_auto_update=0' "$work/base/config.sh"
 echo 'PASS: download hash pin, ABI comparison, offline select, rollback, automatic pause'
