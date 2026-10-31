@@ -30,6 +30,7 @@ for (const id of ['brene-susfs-tools','brene-feature-audit','brene-snapshot-back
  assert.ok(ids.includes(id),'SuSFS toolkit UI missing '+id)
 }
 assert.ok(main.includes('susfs-capability-audit.sh')&&main.includes('susfs-snapshot.sh'),'SuSFS CLI bridge absent')
+assert.ok(ids.includes('brene-auto-profile')&&ids.includes('susfs_auto_enable'),'missing automatic capability status')
 
 
 const createElement=(dataset={})=>{
