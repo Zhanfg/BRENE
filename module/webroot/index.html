@@ -465,7 +465,20 @@
 			</section>
 
 			<section class="tab-panel" data-panel="susfs">
-  <div class="brene-panel-card" id="brene-mount-control">
+  <div class="brene-panel-card" id="brene-susfs-tools">
+ <h3>SuSFS 能力与配置管理</h3>
+ <p class="brene-helper">实时读取内核报告，不将未编译的内核功能伪装成可启用开关。</p>
+ <button class="brene-secondary-action" type="button" id="brene-feature-refresh">刷新内核能力</button>
+ <pre class="brene-mount-preview" id="brene-feature-audit">正在读取内核能力…</pre>
+ <h4>配置快照</h4>
+ <p class="brene-helper">仅备份当前 BRENE 的白名单配置文件，存放在本机 Root 私有目录，不自动上传。恢复前再次备份当前设置。</p>
+ <div class="brene-mount-actions">
+  <button class="brene-secondary-action" type="button" id="brene-snapshot-backup">备份当前配置</button>
+  <button class="brene-secondary-action" type="button" id="brene-snapshot-restore">恢复最新备份</button>
+ </div>
+ <div id="brene-snapshot-status" role="status" class="brene-status">没有执行备份操作</div>
+</div>
+<div class="brene-panel-card" id="brene-mount-control">
     <h3>挂载管理 · Mount</h3>
     <p class="brene-helper">当前内核的 SuSFS 挂载视图隐藏由下方原生开关控制。自动 KernelSU Umount 规则是独立功能，可能导致目标进程无法访问模块文件，默认关闭。</p>
     <div class="card-row">
@@ -487,7 +500,13 @@
       <button type="button" class="brene-secondary-action" id="mount-hide-apply">应用规则</button>
       <button type="button" class="brene-secondary-action" id="mount-hide-refresh">刷新状态</button>
     </div>
-    <div id="mount-hide-status" class="brene-status" role="status">尚未应用</div>
+    <div class="brene-kstat">
+ <strong>挂载排除规则</strong>
+ <p class="brene-helper">每行一个绝对目标路径，末尾 / 表示排除整个目录；不会修改原始文件。将必须保留的相机与温控挂载加入排除。</p>
+ <textarea id="brene-mount-excludes" rows="5" class="brene-mount-preview" placeholder="/vendor/etc/camera/"></textarea>
+ <button type="button" class="brene-secondary-action" id="brene-mount-excludes-save">保存排除规则</button>
+</div>
+<div id="mount-hide-status" class="brene-status" role="status">尚未应用</div>
     <pre id="mount-hide-preview-output" class="brene-mount-preview">点击预览候选以查看具体路径</pre>
     <p class="brene-helper">规则只作用于 KernelSU 标记卸载的后续进程，不保证 Android 17 的 zygote_next 隔离服务全部隐藏。关闭自动收集后需重启以清除已注册的内核规则。</p>
   </div>
