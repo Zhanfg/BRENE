@@ -1,7 +1,7 @@
 id=brene
 name=.BRENE - SuSFS
-version=v0.0.77-dev
-versionCode=77
+version=v0.0.78-dev
+versionCode=78
 author=rrr333nnn333, simonpunk, KOWX712
 description=KernelSU module with SuSFS support and more
 updateJson=https://raw.githubusercontent.com/Zhanfg/BRENE/refs/heads/main/update.json
