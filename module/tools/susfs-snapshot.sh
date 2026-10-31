@@ -43,14 +43,14 @@ case "${1:-}" in
      valid_id "$id" && printf '%s\n' "$id"
    done | LC_ALL=C sort -r ;;
  restore)
-   id=${2:-}
-   valid_id "$id" || { echo '无效快照标识' >&2; exit 2; }
-   [ -d "$ROOT/$id" ] && [ ! -L "$ROOT/$id" ] || { echo '找不到快照' >&2; exit 1; }
+   restore_id=${2:-}
+   valid_id "$restore_id" || { echo '无效快照标识' >&2; exit 2; }
+   [ -d "$ROOT/$restore_id" ] && [ ! -L "$ROOT/$restore_id" ] || { echo '找不到快照' >&2; exit 1; }
    echo '恢复前备份：'
    make_snapshot || exit 1
    copied=0
    for filename in $FILES; do
-     src="$ROOT/$id/$filename"
+     src="$ROOT/$restore_id/$filename"
      [ -f "$src" ] && [ ! -L "$src" ] || continue
      size=$(wc -c < "$src" 2>/dev/null) || size=999999
      [ "$size" -le 65536 ] 2>/dev/null || continue
