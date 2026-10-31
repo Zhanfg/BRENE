@@ -13,6 +13,11 @@ CUSTOM_ROM_NAMES="lineage|infinity|evolution|crdroid|mistos|axion|pixelos|rising
 # Load config
 [[ -e "${PERSISTENT_DIR}/config.sh" ]] && source "${PERSISTENT_DIR}/config.sh"
 
+# Final capability recheck catches kernel/CLI changes across reboots.
+if [[ -f "${MODDIR}/tools/susfs-auto.sh" ]]; then
+    /system/bin/sh "${MODDIR}/tools/susfs-auto.sh" late >> "${PERSISTENT_DIR}/auto-boot.log" 2>&1
+fi
+
 update_config_date
 
 # Update Description
