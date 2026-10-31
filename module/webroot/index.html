@@ -465,7 +465,19 @@
 			</section>
 
 			<section class="tab-panel" data-panel="susfs">
-  <div class="brene-panel-card" id="brene-susfs-tools">
+  <div class="brene-panel-card" id="brene-auto-profile-card">
+  <h3>自动内核适配</h3>
+  <p class="brene-helper">安装时自动识别，早期启动自动应用安全能力，并在模块挂载完成、开机结束后复核。配置与能力档案保存在 /data/adb/brene，不会覆盖你的自定义设置。</p>
+  <div class="card-row">
+    <div class="card-row__body"><span class="card-row__title">自动适配（默认开启）</span>
+    <span class="card-row__sub">关闭后不再自动调整 SuSFS Mount 视图；其他开关仍保留原来的用户设置。</span></div>
+    <md-switch icons id="susfs_auto_enable"></md-switch>
+  </div>
+  <pre id="brene-auto-profile" class="brene-mount-preview" role="status">正在读取已保存的内核能力档案…</pre>
+  <button type="button" class="brene-secondary-action" id="brene-auto-profile-refresh">重新探测并保存</button>
+  <p class="brene-helper">当前仅自动应用内核明确支持的非 SU Mount 视图隐藏。默认不执行 GPU、相机、温控等模块的强制卸载。</p>
+</div>
+<div class="brene-panel-card" id="brene-susfs-tools">
  <h3>SuSFS 能力与配置管理</h3>
  <p class="brene-helper">实时读取内核报告，不将未编译的内核功能伪装成可启用开关。</p>
  <button class="brene-secondary-action" type="button" id="brene-feature-refresh">刷新内核能力</button>
