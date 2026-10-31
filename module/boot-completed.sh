@@ -458,6 +458,15 @@ if [[ -f "${MODDIR}/kstat-rules.sh" ]]; then
 	/system/bin/sh "${MODDIR}/kstat-rules.sh" static
 fi
 
+# Periodic pinned binary verification in a separate late-boot process.
+# It cannot block boot; digest + current kernel ABI must match before replacement.
+if [[ -f "${MODDIR}/tools/susfs-bin-manager.sh" ]]; then
+    (
+        /system/bin/sh "${MODDIR}/tools/susfs-bin-manager.sh" scheduled >> "${PERSISTENT_DIR}/binary-update-boot.log" 2>&1
+        /system/bin/sh "${MODDIR}/tools/susfs-auto.sh" late >> "${PERSISTENT_DIR}/auto-boot.log" 2>&1
+    ) &
+fi
+
 resetprop -c --force
 
 if [[ "${config_brene_logs}" == "1" ]]; then
