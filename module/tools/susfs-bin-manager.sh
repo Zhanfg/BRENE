@@ -166,8 +166,10 @@ case "$MODE" in
    state '状态：在线检查未通过，当前二进制未更改'
    exit 1
   fi ;;
- update)
-  enabled || { state '状态：用户关闭二进制自动更新'; exit 0; }
+ update|manual-update)
+  if [ "$MODE" = update ]; then
+    enabled || { state '状态：用户关闭二进制自动更新'; exit 0; }
+  fi
   if ! stage; then
    state '状态：下载、摘要或 ABI 验证未通过，现有二进制不变'
    exit 1
@@ -202,5 +204,5 @@ case "$MODE" in
     sed -i 's/^config_susfs_binary_auto_update=.*/config_susfs_binary_auto_update=0/' "$CONFIG"
   fi
   state '状态：已回滚并暂停自动更新；检查兼容性后可重新开启' ;;
- *) printf '%s\n' 'Usage: susfs-bin-manager.sh status|select [bundled]|check|update|scheduled|rollback' >&2; exit 2 ;;
+ *) printf '%s\n' 'Usage: susfs-bin-manager.sh status|select [bundled]|check|update|manual-update|scheduled|rollback' >&2; exit 2 ;;
 esac
