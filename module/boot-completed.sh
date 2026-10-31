@@ -163,7 +163,18 @@ fi
 
 #### Hide some sus paths, effective only for processes that are marked umounted with uid >= 10000 ####
 ## First we need to wait until files are accessible in /storage/emulated/0/Android ##
-until [[ -e "/storage/emulated/0/Android" ]]; do sleep 1; done
+# Never block ALL later SuSFS rules when credential-encrypted storage is locked.
+brene_storage_ready=0
+for _brene_wait in $(seq 1 12); do
+    if [[ -d "/storage/emulated/0/Android" ]]; then
+        brene_storage_ready=1
+        break
+    fi
+    sleep 1
+done
+if [[ "$brene_storage_ready" != 1 ]]; then
+    echo 'BRENE: shared storage unavailable; continuing without sdcard-specific rules' >> "${PERSISTENT_DIR}/logs.txt"
+fi
 
 ## System Property Spoofing
 # Spoof System Properties
