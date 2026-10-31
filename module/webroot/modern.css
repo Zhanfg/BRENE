@@ -448,3 +448,8 @@ md-ripple{display:none!important;pointer-events:none!important}
   #tab-bar .dock-label{font-size:10px}
 }
 @media(min-width:780px){.brene-jump-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* SuSFS management controls — preserve existing monochrome palette. */
+#brene-susfs-tools pre,#brene-mount-excludes{width:100%;margin:12px 0;display:block}
+#brene-susfs-tools h4{margin:16px 0 5px;font-size:14px}
+#brene-mount-excludes{min-height:104px;resize:vertical}
