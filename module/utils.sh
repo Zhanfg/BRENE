@@ -190,17 +190,32 @@ update_config_date() {
 	sed -i "s/^CURRENT_DAY=.*/CURRENT_DAY='$(busybox date +%d)'/" ${PERSISTENT_DIR}/config.sh
 }
 
+# Reuse the install/boot feature inventory to skip unsupported optional APIs.
+# When no trustworthy inventory exists, preserve legacy behavior.
+brene_sus_feature() {
+    local inventory="${PERSISTENT_DIR}/auto-features.list"
+    [[ -s "${inventory}" ]] || return 0
+    local feature="$1"
+    if [[ "${feature}" == "SUS_PATH_LOOP" ]]; then
+        grep -Fxq 'CONFIG_KSU_SUSFS_SUS_PATH_LOOP' "${inventory}" || grep -Fxq 'CONFIG_KSU_SUSFS_SUS_PATH' "${inventory}"
+    else
+        grep -Fxq "CONFIG_KSU_SUSFS_${feature}" "${inventory}"
+    fi
+}
 brene_sus_path() {
+	brene_sus_feature SUS_PATH || return 0
 	if ${SUSFS_BIN} add_sus_path "$1" && [[ "${config_brene_logs}" == "1" ]]; then
 		echo "[sus_path]: $1" >> "${PERSISTENT_DIR}/logs.txt"
 	fi
 }
 brene_sus_path_loop() {
+	brene_sus_feature SUS_PATH_LOOP || return 0
 	if ${SUSFS_BIN} add_sus_path_loop "$1" && [[ "${config_brene_logs}" == "1" ]]; then
 		echo "[sus_path_loop]: $1" >> "${PERSISTENT_DIR}/logs.txt"
 	fi
 }
 brene_sus_map() {
+	brene_sus_feature SUS_MAP || return 0
 	if ${SUSFS_BIN} add_sus_map "$1" && [[ "${config_brene_logs}" == "1" ]]; then
 		echo "[sus_map]: $1" >> "${PERSISTENT_DIR}/logs.txt"
 	fi
@@ -211,6 +226,7 @@ brene_set_uname() {
 	fi
 }
 brene_open_redirect() {
+	brene_sus_feature OPEN_REDIRECT || return 0
 	brene_clone_perm "$2" "$1"
 	if ${SUSFS_BIN} add_open_redirect "$1" "$2" "$3" && [[ "${config_brene_logs}" == "1" ]]; then
 		echo "[open_redirect]: $1 $2 $3" >> "${PERSISTENT_DIR}/logs.txt"
