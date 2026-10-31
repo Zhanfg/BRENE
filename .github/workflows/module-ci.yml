@@ -20,6 +20,8 @@ jobs:
           sh -n module/kstat-rules.sh
           sh -n module/autoshield.sh
           sh -n module/mount-hide.sh
+          sh -n module/tools/susfs-capability-audit.sh
+          sh -n module/tools/susfs-snapshot.sh
           sh -n module/tools/duck-evidence-audit.sh
           sh -n module/tools/duck-evidence-watch.sh
           sh -n module/tools/gpu-v891-payload-audit.sh
@@ -43,6 +45,8 @@ jobs:
         run: sh tests/test-autoshield.sh
       - name: Mount rules opt-in and exclusion regression
         run: sh tests/test-mount-hide.sh
+      - name: SuSFS runtime capability and safe snapshots
+        run: sh tests/test-susfs-toolkit.sh
       - name: KSTAT parser dry-run tests
         run: sh tests/test-kstat.sh
       - name: Check WebUI JavaScript syntax
