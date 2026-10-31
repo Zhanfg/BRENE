@@ -26,6 +26,11 @@ for(const id of ['logs','mount_summary','suspicious_mounts','duck-audit-button']
 assert.ok(html.includes('navigation.js')&&html.includes('diagnostics.js'))
 assert.ok(html.includes('id="brene-mount-control"')&&html.includes('data-open-panel="susfs"'))
 assert.ok(modern.includes('.dock-glyph')&&modern.includes('grid-template-rows:26px 16px'))
+for (const id of ['brene-susfs-tools','brene-feature-audit','brene-snapshot-backup','brene-snapshot-restore','brene-mount-excludes','brene-mount-excludes-save']) {
+ assert.ok(ids.includes(id),'SuSFS toolkit UI missing '+id)
+}
+assert.ok(main.includes('susfs-capability-audit.sh')&&main.includes('susfs-snapshot.sh'),'SuSFS CLI bridge absent')
+
 
 const createElement=(dataset={})=>{
   const handlers={}
