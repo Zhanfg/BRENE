@@ -31,6 +31,7 @@ for (const id of ['brene-susfs-tools','brene-feature-audit','brene-snapshot-back
 }
 assert.ok(main.includes('susfs-capability-audit.sh')&&main.includes('susfs-snapshot.sh'),'SuSFS CLI bridge absent')
 assert.ok(ids.includes('brene-auto-profile')&&ids.includes('susfs_auto_enable'),'missing automatic capability status')
+assert.ok(['brene-binary-manager','brene-binary-status','brene-binary-check','brene-binary-apply','brene-binary-rollback','susfs_binary_auto_update'].every(id=>ids.includes(id)),'missing binary updater controls')
 
 
 const createElement=(dataset={})=>{
