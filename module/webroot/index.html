@@ -465,7 +465,24 @@
 			</section>
 
 			<section class="tab-panel" data-panel="susfs">
-  <div class="brene-panel-card" id="brene-auto-profile-card">
+  <div class="brene-panel-card" id="brene-binary-manager">
+  <h3>SuSFS 二进制更新</h3>
+  <p class="brene-helper">安装时自动检查可信上游固定版本；下载的 ARM64 程序必须通过 SHA-256、ELF 类型和当前内核接口验证。未验证的远程版本不会被执行或覆盖到系统。每次开机还会按间隔检查。</p>
+  <div class="card-row">
+    <div class="card-row__body">
+      <span class="card-row__title">自动检查及安全更新</span>
+      <span class="card-row__sub">离线安装仍可用；回滚时自动暂停后续更新。</span>
+    </div>
+    <md-switch icons id="susfs_binary_auto_update"></md-switch>
+  </div>
+  <pre id="brene-binary-status" class="brene-mount-preview" role="status">正在读取二进制更新状态…</pre>
+  <div class="brene-mount-actions">
+    <button class="brene-secondary-action" id="brene-binary-check" type="button">检查可信版本</button>
+    <button class="brene-secondary-action" id="brene-binary-apply" type="button">立即更新</button>
+    <button class="brene-secondary-action" id="brene-binary-rollback" type="button">恢复上一版本</button>
+  </div>
+</div>
+<div class="brene-panel-card" id="brene-auto-profile-card">
   <h3>自动内核适配</h3>
   <p class="brene-helper">安装时自动识别，早期启动自动应用安全能力，并在模块挂载完成、开机结束后复核。配置与能力档案保存在 /data/adb/brene，不会覆盖你的自定义设置。</p>
   <div class="card-row">
