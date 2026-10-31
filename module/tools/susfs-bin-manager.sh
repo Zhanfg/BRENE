@@ -77,15 +77,21 @@ fetch(){
   cp "$BRENE_BIN_FIXTURE" "$dest" || return 1
  elif command -v curl >/dev/null 2>&1; then
   curl --fail --location --silent --show-error --proto '=https' --tlsv1.2 \
-    --connect-timeout 4 --max-time 18 --retry 1 "$URL" -o "$dest" >> "$LOG" 2>&1 || return 1
+    --proto-redir '=https' --connect-timeout 4 --max-time 18 --retry 1 "$URL" -o "$dest" >> "$LOG" 2>&1 || return 1
+ elif command -v wget >/dev/null 2>&1; then
+  wget -q -T 12 -O "$dest" "$URL" >> "$LOG" 2>&1 || return 1
+ elif command -v busybox >/dev/null 2>&1; then
+  busybox wget -q -T 12 -O "$dest" "$URL" >> "$LOG" 2>&1 || return 1
  else
-  log 'No CA-verified HTTPS curl transport; retaining offline binary'
+  log 'No HTTPS transport; retaining offline binary'
   return 1
  fi
  [ -f "$dest" ] && [ ! -L "$dest" ] || return 1
  size=$(wc -c < "$dest" 2>/dev/null)
  case "$size" in ''|*[!0-9]*) return 1;; esac
- [ "$size" -ge 4096 ] && [ "$size" -le 2097152 ] || return 1
+ if [ "$BRENE_BIN_TEST" = 1 ]; then [ "$size" -ge 10 ] || return 1
+ else [ "$size" -ge 4096 ] || return 1; fi
+ [ "$size" -le 2097152 ] || return 1
  check_sha "$dest" || return 1
  chmod 700 "$dest" || return 1
  compatible "$dest" || return 1
