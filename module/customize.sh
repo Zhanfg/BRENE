@@ -61,7 +61,7 @@ cp -pf "${MODPATH}/tools/susfs" "${PERSISTENT_DIR}/susfs" ||
 cp -f "${MODPATH}/tools/susfs" "${DEST_BIN_DIR}/susfs" ||
     abort '[❌] Failed to install BRENE SuSFS binary'
 chmod 755 "${DEST_BIN_DIR}/susfs"
-chmod +x "${MODPATH}/inotify.sh" "${MODPATH}/remove_ksu_directory.sh" "${MODPATH}/kstat-rules.sh" "${MODPATH}/autoshield.sh" "${MODPATH}/mount-hide.sh"
+chmod +x "${MODPATH}/inotify.sh" "${MODPATH}/remove_ksu_directory.sh" "${MODPATH}/kstat-rules.sh" "${MODPATH}/autoshield.sh" "${MODPATH}/mount-hide.sh" "${MODPATH}/tools/susfs-auto.sh"
 ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/sus"
 ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/ksu_susfs"
 
@@ -117,6 +117,14 @@ else
 		fi
 
 	done < "${MODPATH}/config.sh"
+fi
+
+# Persist the capability profile during installation, before first reboot.
+# Existing user configuration is not overwritten.
+if BRENE_AUTO_INSTALL_BIN="${MODPATH}/tools/susfs" /system/bin/sh "${MODPATH}/tools/susfs-auto.sh" install; then
+    echo '[✅] SuSFS capability profile persisted; boot-time recheck enabled'
+else
+    echo '[⚠️] Auto-probe deferred to boot; user settings preserved'
 fi
 
 update_config_date
