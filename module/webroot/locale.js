@@ -161,6 +161,13 @@ function translate(text) {
   return CN[value]
 }
 const EN_SOURCE = {
+  '自动内核适配':'Automatic kernel adaptation',
+  '自动适配（默认开启）':'Automatic adaptation (enabled by default)',
+  '重新探测并保存':'Recheck and save',
+  '正在读取已保存的内核能力档案…':'Reading saved kernel capabilities…',
+  '安装时自动识别，早期启动自动应用安全能力，并在模块挂载完成、开机结束后复核。配置与能力档案保存在 /data/adb/brene，不会覆盖你的自定义设置。':'Automatically probes on installation and every boot. Persists capabilities without overwriting user settings.',
+  '关闭后不再自动调整 SuSFS Mount 视图；其他开关仍保留原来的用户设置。':'Disable automatic mount view configuration without changing other user preferences.',
+  '当前仅自动应用内核明确支持的非 SU Mount 视图隐藏。默认不执行 GPU、相机、温控等模块的强制卸载。':'Only confirmed, safe mount view features are applied automatically. Driver and thermal mounts are not globally unmounted.',
   'SuSFS 能力与配置管理':'SuSFS capabilities and configuration',
   '实时读取内核报告，不将未编译的内核功能伪装成可启用开关。':'Reads kernel-reported features; does not invent toggles for uncompiled features.',
   '刷新内核能力':'Refresh kernel capabilities',
