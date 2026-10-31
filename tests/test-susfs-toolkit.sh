@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eux
+set -eu
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 mkdir -p "$work/state"
