@@ -53,6 +53,7 @@ const configs = [
 		},
 	},
 	{ id: 'susfs_auto_enable' },
+	{ id: 'susfs_binary_auto_update' },
 	{ id: 'mount_hide_auto_bind' },
 	{ id: 'mount_hide_sysfs' },
 	{ id: 'pif_props' },
@@ -651,3 +652,31 @@ document.getElementById('brene-auto-profile-refresh')?.addEventListener('click',
  await showAutoProfile();
 });
 showAutoProfile().catch(()=>{});
+
+
+/* Verified binary update management. Buttons do not run arbitrary shell input. */
+const binaryUpdaterPath='/data/adb/modules/brene/tools/susfs-bin-manager.sh';
+const binaryStatusPanel=document.getElementById('brene-binary-status');
+async function showBinaryStatus(){
+ if(!binaryStatusPanel)return;
+ const r=await exec('sh '+binaryUpdaterPath+' status');
+ binaryStatusPanel.textContent=r.errno===0?r.stdout.trim():(r.stderr||'无法读取当前更新状态');
+}
+document.getElementById('brene-binary-check')?.addEventListener('click',async()=>{
+ const r=await exec('sh '+binaryUpdaterPath+' check');
+ toast(r.errno===0?'可信版本和内核接口校验成功':'在线检查失败，当前二进制未变化');
+ await showBinaryStatus();
+});
+document.getElementById('brene-binary-apply')?.addEventListener('click',async()=>{
+ if(!window.confirm('将验证受信任二进制，并在可兼容时替换系统共享工具。继续？'))return;
+ const r=await exec('sh '+binaryUpdaterPath+' update');
+ toast(r.errno===0?'更新流程已完成，请查看状态':'更新被拒绝或失败，已保留原版本');
+ await showBinaryStatus();
+});
+document.getElementById('brene-binary-rollback')?.addEventListener('click',async()=>{
+ if(!window.confirm('恢复上一份二进制并暂停自动更新？操作完成后建议重启。'))return;
+ const r=await exec('sh '+binaryUpdaterPath+' rollback');
+ toast(r.errno===0?'已恢复上一份二进制，自动更新已暂停':'无可用回退文件或恢复失败');
+ await showBinaryStatus();
+});
+showBinaryStatus().catch(()=>{});
