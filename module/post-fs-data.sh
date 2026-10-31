@@ -23,6 +23,11 @@ ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/ksu_susfs" # For compatibility
 true > "${PERSISTENT_DIR}/log.txt"
 true > "${PERSISTENT_DIR}/logs.txt"
 
+# Automatic early, kernel-dependent configuration; failure will not block boot.
+if [[ -f "${MODDIR}/tools/susfs-auto.sh" ]]; then
+    /system/bin/sh "${MODDIR}/tools/susfs-auto.sh" early >> "${PERSISTENT_DIR}/auto-boot.log" 2>&1
+fi
+
 # User-defined KSTAT snapshots must be recorded before later module mounts.
 # Rules are optional and feature-gated; no change when the list is empty.
 if [[ -f "${MODDIR}/kstat-rules.sh" ]]; then
@@ -140,9 +145,7 @@ fi
 #### Hide all sus mounts for NON-SU processes in this stage just to prevent zygote from caching them in memory ####
 ## This should be mainly applied if you have ReZygisk enabled but without TreatWheel module ##
 ## Or it is up to you to keep it enabled since su process can still see the mounts ##
-if [[ "${config_hide_sus_mnts_for_non_su_procs}" == "1" ]]; then
-	${SUSFS_BIN} hide_sus_mnts_for_non_su_procs 1
-fi
+# Safe mount visibility is now negotiated by susfs-auto.sh before Zygote.
 
 # Spoof Uname
 #### Spoof the uname, effective for all processes ####
