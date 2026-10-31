@@ -11,6 +11,8 @@ config_selinux_hide=1
 config_kernel_umount=1
 # Detect the kernel automatically without overriding user toggles.
 config_susfs_auto_enable=1
+# Install-time online binary retrieval; verified SHA-256 pinned to source revision.
+config_susfs_binary_auto_update=1
 # Opt-in because per-fork unmount may remove module functionality.
 config_mount_hide_auto_bind=0
 config_mount_hide_sysfs=0
