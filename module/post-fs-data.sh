@@ -23,6 +23,17 @@ ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/ksu_susfs" # For compatibility
 true > "${PERSISTENT_DIR}/log.txt"
 true > "${PERSISTENT_DIR}/logs.txt"
 
+# Automatic early, kernel-dependent configuration; failure will not block boot.
+if [[ -f "${MODDIR}/tools/susfs-auto.sh" ]]; then
+    /system/bin/sh "${MODDIR}/tools/susfs-auto.sh" early >> "${PERSISTENT_DIR}/auto-boot.log" 2>&1
+fi
+
+# User-defined KSTAT snapshots must be recorded before later module mounts.
+# Rules are optional and feature-gated; no change when the list is empty.
+if [[ -f "${MODDIR}/kstat-rules.sh" ]]; then
+	/system/bin/sh "${MODDIR}/kstat-rules.sh" pre
+fi
+
 ## Important Notes:
 ## - The following command can be run at other stages like service.sh, boot-completed.sh etc..,
 ## - This module is just an demo showing how to use ksu_susfs tool to commuicate with kernel
@@ -100,6 +111,13 @@ if [[ "${config_spoof_cmdline_or_bootconfig}" == "1" ]]; then
 		cat /proc/bootconfig > "${FAKE_BOOTCONFIG}"
 		sed -i 's/androidboot.warranty_bit = "1"/androidboot.warranty_bit = "0"/' "${FAKE_BOOTCONFIG}"
 		sed -i 's/androidboot.verifiedbootstate = "orange"/androidboot.verifiedbootstate = "green"/' "${FAKE_BOOTCONFIG}"
+		# Optional full-file override. Never source/eval custom content.
+		if [[ "${config_use_custom_cmdline_or_bootconfig}" == "1" && -s "${PERSISTENT_DIR}/custom_bootconfig.txt" ]]; then
+			bytes=$(wc -c < "${PERSISTENT_DIR}/custom_bootconfig.txt")
+			if [[ "${bytes}" =~ ^[0-9]+$ && "${bytes}" -le 8192 ]]; then
+				cp -f "${PERSISTENT_DIR}/custom_bootconfig.txt" "${FAKE_BOOTCONFIG}"
+			fi
+		fi
 		${SUSFS_BIN} set_cmdline_or_bootconfig "${FAKE_BOOTCONFIG}"
 	else
 		FAKE_CMDLINE="${PERSISTENT_DIR}/fake_cmdline"
@@ -107,6 +125,12 @@ if [[ "${config_spoof_cmdline_or_bootconfig}" == "1" ]]; then
 		cat /proc/cmdline > "${FAKE_CMDLINE}"
 		sed -i 's/androidboot.warranty_bit=1/androidboot.warranty_bit=0/' "${FAKE_CMDLINE}"
 		sed -i 's/androidboot.verifiedbootstate=orange/androidboot.verifiedbootstate=green/' "${FAKE_CMDLINE}"
+		if [[ "${config_use_custom_cmdline_or_bootconfig}" == "1" && -s "${PERSISTENT_DIR}/custom_cmdline.txt" ]]; then
+			bytes=$(wc -c < "${PERSISTENT_DIR}/custom_cmdline.txt")
+			if [[ "${bytes}" =~ ^[0-9]+$ && "${bytes}" -le 8192 ]]; then
+				cp -f "${PERSISTENT_DIR}/custom_cmdline.txt" "${FAKE_CMDLINE}"
+			fi
+		fi
 		${SUSFS_BIN} set_cmdline_or_bootconfig "${FAKE_CMDLINE}"
 	fi
 fi
@@ -121,9 +145,7 @@ fi
 #### Hide all sus mounts for NON-SU processes in this stage just to prevent zygote from caching them in memory ####
 ## This should be mainly applied if you have ReZygisk enabled but without TreatWheel module ##
 ## Or it is up to you to keep it enabled since su process can still see the mounts ##
-if [[ "${config_hide_sus_mnts_for_non_su_procs}" == "1" ]]; then
-	${SUSFS_BIN} hide_sus_mnts_for_non_su_procs 1
-fi
+# Safe mount visibility is now negotiated by susfs-auto.sh before Zygote.
 
 # Spoof Uname
 #### Spoof the uname, effective for all processes ####

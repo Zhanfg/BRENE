@@ -1,0 +1,161 @@
+name: BRENE module CI
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Shell syntax
+        run: |
+          set -e
+          for file in module/*.sh; do bash -n "$file"; done
+          sh -n module/kstat-rules.sh
+          sh -n module/autoshield.sh
+          sh -n module/mount-hide.sh
+          sh -n module/tools/susfs-capability-audit.sh
+          sh -n module/tools/susfs-snapshot.sh
+          sh -n module/tools/susfs-auto.sh
+          sh -n module/tools/susfs-bin-manager.sh
+          sh -n module/post-mount.sh
+          sh -n module/tools/duck-evidence-audit.sh
+          sh -n module/tools/duck-evidence-watch.sh
+          sh -n module/tools/gpu-v891-payload-audit.sh
+          sh -n module/tools/gpu-dualstack-preflight.sh
+      - name: Validate non-destructive first-install defaults
+        run: python3 tests/test-config-policy.py
+      - name: Read-only Duck Detector evidence regression
+        run: sh tests/test-duck-evidence.sh
+      - name: DuckDetector capture timeout and lock cleanup
+        run: |
+          set -e
+          T=$(mktemp -d)
+          trap 'rm -rf "$T"' EXIT
+          if BRENE_WATCH_BASE="$T" BRENE_WATCH_LIMIT=1 sh module/tools/duck-evidence-watch.sh; then
+            echo "Unexpected detector capture succeeded in CI" >&2
+            exit 1
+          fi
+          grep -q '采集超时' "$T/duck-watch.status"
+          test ! -d "$T/.duck-watch.lock"
+      - name: AutoShield discovery / apply dry-run tests
+        run: sh tests/test-autoshield.sh
+      - name: Mount rules opt-in and exclusion regression
+        run: sh tests/test-mount-hide.sh
+      - name: SuSFS runtime capability and safe snapshots
+        run: sh tests/test-susfs-toolkit.sh
+      - name: Auto SuSFS install and boot policy regression
+        run: sh tests/test-susfs-auto.sh
+      - name: Trusted online binary update, ABI and rollback regression
+        run: sh tests/test-susfs-binary-manager.sh
+      - name: Validate pinned upstream binary checksum and ARM64 format
+        run: |
+          set -euo pipefail
+          REV=041f69d7fe23a7bd928f9bd90eb3535774d00456
+          PIN=8a626ce3bae27a7bcaa2e7f5f7b91e786ecc57f8e57d19c7856719a89b54b6fa
+          URL="https://raw.githubusercontent.com/sidex15/susfs4ksu-binaries/$REV/ksu_susfs_arm64"
+          curl --fail --location --silent --show-error --retry 2 --max-time 20 "$URL" -o /tmp/brene-susfs-upstream.bin
+          printf '%s  %s\n' "$PIN" /tmp/brene-susfs-upstream.bin | sha256sum --check
+          file /tmp/brene-susfs-upstream.bin | grep -E 'ELF 64-bit.*ARM aarch64|ELF 64-bit.*aarch64'
+
+      - name: KSTAT parser dry-run tests
+        run: sh tests/test-kstat.sh
+      - name: Check WebUI JavaScript syntax
+        run: |
+          set -e
+          node --check module/webroot/script.js
+          node --check module/webroot/locale.js
+          node --check module/webroot/kstat-ui.js
+          node --check module/webroot/autoshield-ui.js
+          node --check module/webroot/navigation.js
+          node --check module/webroot/diagnostics.js
+      - name: Validate mobile floating dock and mount/log layout
+        run: node tests/test-dock-layout.mjs
+      - name: Verify WebUI localization and layout
+        run: node tests/test-webui-i18n.mjs
+      - name: Verify WebUI and KSTAT wiring
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('module')
+          page=(root/'webroot/index.html').read_text()
+          js=(root/'webroot/script.js').read_text()
+          for x in ('modern.css','locale.js','kstat-ui.js','brene-kstat-rules','brene-kstat-save'):
+              assert x in page, f'Missing WebUI control: {x}'
+          assert 'UNIQUE_EOF' not in js, 'Unsafe heredoc found'
+          for name in ('post-fs-data.sh','boot-completed.sh'):
+              assert 'kstat-rules.sh' in (root/name).read_text()
+          assert 'custom_sus_kstat.txt' in (root/'customize.sh').read_text()
+          assert 'custom_static_kstat.txt' in (root/'customize.sh').read_text()
+          assert 'config_auto_hide=0' in (root/'config.sh').read_text()
+          assert 'autoshield.sh' in (root/'boot-completed.sh').read_text()
+          assert 'diagnostics.js' in page and 'navigation.js' in page
+          assert 'duck-watch-button' in page
+          assert 'duck-evidence-watch.sh' in (root/'webroot/diagnostics.js').read_text()
+          assert 'suspicious_mounts' in page and 'mount_summary' in page
+          assert 'SWIPE_THRESHOLD' not in js
+          assert 'cat /proc/1/mountinfo | grep' not in js
+          for x in ('overview','privacy','kernel','tools','diagnostics'):
+              assert f'data-group="{x}"' in page
+          assert 'autoshield.sh' in (root/'customize.sh').read_text()
+          for item in ('autoshield-ui.js','brene-auto-scan','brene-auto-enable','brene-auto-disable'):
+              assert item in page, f'Missing AutoShield WebUI: {item}'
+          assert 'config_use_custom_cmdline_or_bootconfig=0' in (root/'config.sh').read_text()
+          assert 'susfs.previous' in (root/'customize.sh').read_text()
+          assert 'susfs.previous' in (root/'uninstall.sh').read_text()
+          assert 'susfs-bin-manager.sh' in (root/'customize.sh').read_text()
+          assert 'susfs-bin-manager.sh' in (root/'boot-completed.sh').read_text()
+          for x in ('brene-static-kstat-save','brene-boot-save','brene-feature-matrix'):
+              assert x in page, f'Missing advanced control: {x}'
+          source=(root/'webroot/kstat-ui.js').read_text()
+          for command in ('custom_static_kstat.txt','custom_cmdline.txt','custom_bootconfig.txt'):
+              assert command in source
+          print('WebUI/KSTAT integration checks passed')
+          PY
+      - name: Build directly flashable module ZIP
+        run: |
+          set -euo pipefail
+          cd module
+          zip -q -r ../BRENE-Flashable-Dev.zip .
+          cd ..
+          python3 tests/check-flashable-zip.py BRENE-Flashable-Dev.zip
+          sha256sum BRENE-Flashable-Dev.zip > BRENE-Flashable-Dev.zip.sha256
+      # Since Feb 2026 upload-artifact v7 supports single-file uploads
+      # without an additional ZIP wrapper. SukiSU must see module.prop at
+      # the outermost level of the downloaded file.
+      - name: Upload one directly flashable ZIP (no nested archive)
+        uses: actions/upload-artifact@v7
+        with:
+          path: BRENE-Flashable-Dev.zip
+          archive: false
+          if-no-files-found: error
+      - name: Download artifact again for installation-layout regression
+        uses: actions/download-artifact@v8
+        with:
+          name: BRENE-Flashable-Dev.zip
+          path: artifact-roundtrip
+          # The original artifact is a ZIP: preserve it instead of extracting
+          # module.prop and other members into the download directory.
+          skip-decompress: true
+      - name: Validate downloaded file is directly flashable
+        run: |
+          set -euo pipefail
+          ls -la artifact-roundtrip
+          if [ -f artifact-roundtrip/BRENE-Flashable-Dev.zip ]; then
+            DOWNLOADED=artifact-roundtrip/BRENE-Flashable-Dev.zip
+          elif [ -f artifact-roundtrip ]; then
+            DOWNLOADED=artifact-roundtrip
+          else
+            mapfile -t files < <(find artifact-roundtrip -maxdepth 1 -type f)
+            [ "${#files[@]}" -eq 1 ] || { echo "Expected one downloadable ZIP file"; exit 1; }
+            DOWNLOADED=${files[0]}
+          fi
+          cmp BRENE-Flashable-Dev.zip "$DOWNLOADED"
+          python3 tests/check-flashable-zip.py "$DOWNLOADED"
+          echo "Direct-download artifact is byte-for-byte identical to module ZIP."

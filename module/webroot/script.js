@@ -52,6 +52,10 @@ const configs = [
 			setFeature(`resetprop -n persist.sys.fflag.override.settings_enable_monitor_phantom_procs ${enabled ? false : true}`)
 		},
 	},
+	{ id: 'susfs_auto_enable' },
+	{ id: 'susfs_binary_auto_update' },
+	{ id: 'mount_hide_auto_bind' },
+	{ id: 'mount_hide_sysfs' },
 	{ id: 'pif_props' },
 	{ id: 'rom_props' },
 	{ id: 'brene_logs' },
@@ -71,6 +75,7 @@ const configs = [
 	{ id: 'hide_framework_res_apk' },
 	{ id: 'enable_avc_log_spoofing' },
 	{ id: 'spoof_cmdline_or_bootconfig' },
+	{ id: 'use_custom_cmdline_or_bootconfig' },
 	{ id: 'fix_data_local_tmp_inconsistencies' },
 	{ id: 'spoof_system_properties' },
 	{ id: 'spoof_fingerprint_properties' },
@@ -88,7 +93,7 @@ const configs = [
 document.querySelectorAll('a[href]').forEach((element) => {
 	element.addEventListener('click', (event) => {
 		event.preventDefault()
-		exec(`am start -a android.intent.action.VIEW -d ${element.href}`)
+		if (element.href.startsWith('https://') || element.href.startsWith('http://')) exec(`am start -a android.intent.action.VIEW -d ${shellQuote(element.href)}`)
 	})
 })
 
@@ -178,53 +183,52 @@ exec('[[ -e /storage/emulated/0/..5.u.S ]] && echo "Abnormal" || echo "Normal"')
 	container.innerText = result.stdout
 })
 
-// Recommended Modules
+// Query modules once and tolerate unavailable, blank or unexpected ksud output.
 exec('ksud module list').then((result) => {
-	if (result.errno !== 0) return
-
-	const container = document.querySelector('#recommended-modules')
-	const modules = JSON.parse(result.stdout)
-	const moduleIds = modules.map((mod) => mod.id)
-	const cardRows = container.querySelectorAll('.card-row')
-
-	cardRows.forEach((row) => {
-		const moduleKey = row.getAttribute('data-module')
-		const statusSpan = row.querySelector('.status-text')
-
-		if (moduleIds.includes(moduleKey)) {
-			statusSpan.innerText = 'Status: Installed'
-			statusSpan.style.color = '#4CAF50'
-		}
-	})
-
-	exec('[[ -e /data/adb/modules/TA_utl ]]').then((result) => {
-		if (result.errno !== 0) return
-
-		const card = document.querySelector('[data-module="tricky_addon"]')
-		const statusSpan = card.querySelector('.status-text')
-		statusSpan.innerText = 'Status: Installed'
-		statusSpan.style.color = '#4CAF50'
-	})
-})
-
-// Incompatible Modules
-exec('ksud module list').then((result) => {
-	if (result.errno !== 0) return
-
-	const container = document.querySelector('#incompatible-modules')
-	const modules = JSON.parse(result.stdout)
-	const moduleIds = modules.map((mod) => mod.id)
-	const cardRows = container.querySelectorAll('.card-row')
-
-	cardRows.forEach((row) => {
-		const moduleKey = row.getAttribute('data-module')
-		const statusSpan = row.querySelector('.status-text')
-
-		if (moduleIds.includes(moduleKey)) {
-			statusSpan.innerText = 'Status: Installed'
-			statusSpan.style.color = '#ff0000be'
-		}
-	})
+  const recommended = document.querySelector('#recommended-modules')
+  const incompatible = document.querySelector('#incompatible-modules')
+  let modules = null
+  if (result.errno === 0 && result.stdout.trim()) {
+    try {
+      const decoded = JSON.parse(result.stdout)
+      if (Array.isArray(decoded)) modules = decoded
+      else if (Array.isArray(decoded?.modules)) modules = decoded.modules
+    } catch (_) { /* Leave status as unavailable instead of crashing WebUI. */ }
+  }
+  for (const group of [recommended, incompatible]) {
+    if (!group) continue
+    group.querySelectorAll('.card-row').forEach(row => {
+      const status = row.querySelector('.status-text')
+      if (!status) return
+      if (!modules) {
+        status.textContent = '状态：无法读取模块列表'
+        status.style.color = 'var(--brene-muted)'
+        return
+      }
+      const ids = new Set(modules.map(mod => mod?.id).filter(Boolean))
+      if (ids.has(row.getAttribute('data-module'))) {
+        status.textContent = 'Status: Installed'
+        status.style.color = group === recommended ? '#4CAF50' : '#d24b4b'
+      } else {
+        status.textContent = 'Status: Not installed'
+        status.style.color = ''
+      }
+    })
+  }
+  // Preserve upstream special case for Tricky Addon.
+  if (recommended) {
+    exec('test -e /data/adb/modules/TA_utl').then(check => {
+      if (check.errno !== 0) return
+      const row = recommended.querySelector('[data-module="tricky_addon"] .status-text')
+      if (row) {
+        row.textContent = 'Status: Installed'
+        row.style.color = '#4CAF50'
+      }
+    })
+  }
+}).catch(() => {
+  document.querySelectorAll('#recommended-modules .status-text, #incompatible-modules .status-text')
+    .forEach(node => { node.textContent='状态：查询失败' })
 })
 
 // Load enabled features
@@ -232,47 +236,13 @@ exec('susfs show enabled_features').then((result) => {
 	const container = document.getElementById('kernel-features-container')
 
 	if (result.errno !== 0) {
-		container.innerText = 'Failed to load enabled features'
+		container.innerText = '无法读取内核功能列表'
 		return
 	}
 	container.innerText = result.stdout.replaceAll('CONFIG_KSU_SUSFS_', '')
 })
 
-// Load Suspicious Mounts
-exec(`cat /proc/1/mountinfo | grep -E "^2[0-9]{9,} .*$|KSU" | awk '{print $5}'`).then((result) => {
-	const container = document.getElementById('suspicious_mounts')
-
-	if (result.errno !== 0) {
-		container.innerText = 'Failed to load'
-		return
-	}
-
-	if (result.stdout.length > 0) {
-		container.innerText = result.stdout
-	} else {
-		container.innerText = '0'
-	}
-})
-
-// Load logs
-exec(`cat ${PERSISTENT_DIR}/log.txt`).then((result) => {
-	const container = document.getElementById('logs')
-
-	if (result.errno !== 0) {
-		container.textContent += 'Failed to load logs'
-		return
-	}
-	container.textContent += result.stdout
-	container.textContent += '\n'
-
-	exec(`cat ${PERSISTENT_DIR}/logs.txt`).then((result) => {
-		if (result.errno !== 0) {
-			container.textContent += 'Failed to load logs'
-			return
-		}
-		container.textContent += result.stdout
-	})
-})
+// Mount diagnostics and log handling are centralized in diagnostics.js.
 
 // Load brene version
 exec(`grep "^version=" ${MODDIR}/module.prop | cut -d'=' -f2`).then((result) => {
@@ -287,31 +257,52 @@ exec('susfs show version').then((result) => {
 })
 
 // Helper function to update config
+// Never put WebUI text directly inside a shell program or here-document.
+function shellQuote(input) {
+ return "'" + String(input).replace(/'/g, "'\\''") + "'"
+}
+function safeSaveTextFile(filename, content) {
+ const allowed = new Set(['custom_sus_map.txt','custom_sus_path.txt','custom_sus_path_loop.txt',
+  'custom_open_redirect.txt','custom_kernel_umount.txt','mount-hide-exclude.txt'])
+ if(!allowed.has(filename)) return Promise.resolve({errno:1,stderr:'Invalid target'})
+ const bytes = new TextEncoder().encode(content)
+ if(bytes.length > 65536) return Promise.resolve({errno:1,stderr:'Too much text (64 KiB limit)'})
+ let binary=''
+ for(const byte of bytes) binary+=String.fromCharCode(byte)
+ const base64=btoa(binary)
+ return exec(`printf '%s' ${shellQuote(base64)} | base64 -d > ${shellQuote(PERSISTENT_DIR+'/'+filename)}`)
+}
 function updateConfig(config, value) {
 	exec(`sed -i "s/^${config}=.*/${config}=${value}/" ${PERSISTENT_DIR}/config.sh`).then((result) => {
-		if (result.errno !== 0) toast('Failed to update config')
+		if (result.errno !== 0) toast('保存配置失败')
 	})
 }
 
 // TEMP
 // Helper function to update config
 function updateConfig2(config, value) {
-	exec(`sed -i "s/^${config}=.*/${config}='${value}'/" ${PERSISTENT_DIR}/config.sh`).then((result) => {
-		if (result.errno !== 0) toast('Failed to update config')
-	})
+ if (!/^[a-z_]+$/.test(config) || !/^[A-Za-z0-9._+:@#, -]{0,128}$/.test(value)) {
+  toast('配置值不合法')
+  return
+ }
+ const escaped = value.replace(/[\\&|]/g, char => '\\' + char)
+ const sedExpr = `s|^${config}=.*|${config}='${escaped}'|`
+ exec(`sed -i ${shellQuote(sedExpr)} ${shellQuote(PERSISTENT_DIR+'/config.sh')}`).then(result => {
+  if(result.errno !== 0) toast('保存配置失败')
+ })
 }
 
 // Helper function to set config immedialtely that no need to reboot
 function setFeature(cmd) {
 	exec(cmd).then((result) => {
-		toast(result.errno === 0 ? 'No need to reboot' : result.stderr)
+		toast(result.errno === 0 ? '已应用，无需重启' : result.stderr)
 	})
 }
 
 // Load config and add toggle event
 exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 	if (result.errno !== 0) {
-		toast('Failed to load config')
+		toast('读取配置失败')
 		return
 	}
 
@@ -363,25 +354,30 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 	openButton.addEventListener('click', () => {
 		dialog.show()
 	})
-	dialog.addEventListener('close', () => {
-		if (dialog.returnValue === 'confirm') {
-			exec(`
-				cp -f ${MODDIR}/config.sh ${PERSISTENT_DIR}
-			`).then((result) => {
-				configs.forEach((config) => {
-					const configId = `config_${config.id}`
-					const element = document.getElementById(config.id)
-					if (!element) return
-
-					const value = configValues[configId]
-					if (value !== undefined) {
-						element.selected = parseInt(value) === 1
-					}
-				})
-
-				toast(result.errno === 0 ? 'Success' : result.stderr)
-			})
-		}
+	dialog.addEventListener('close', async () => {
+		if (dialog.returnValue !== 'confirm') return
+		const result = await exec(`cp -f ${MODDIR}/config.sh ${PERSISTENT_DIR}/config.sh`)
+		if (result.errno !== 0) { toast(result.stderr || '恢复默认设置失败'); return }
+		const defaults = await exec(`cat ${PERSISTENT_DIR}/config.sh`)
+		if (defaults.errno !== 0) { toast('无法重新加载默认配置'); return }
+		const newValues = Object.fromEntries(defaults.stdout.split('\n')
+			.filter(line => /^config_[a-z_]+=/.test(line))
+			.map(line => {
+				const pos = line.indexOf('=')
+				return [line.slice(0,pos), line.slice(pos+1).trim().replace(/^['"](.*)['"]$/, '$1')]
+			}))
+		configs.forEach(config => {
+			const element = document.getElementById(config.id)
+			const value = newValues['config_'+config.id]
+			if (element && value !== undefined) element.selected = Number(value) === 1
+		})
+		const release = document.getElementById('custom_uname_release')
+		const version = document.getElementById('custom_uname_version')
+		const digest = document.getElementById('vbh_text_field')
+		if(release) release.value = newValues.config_custom_uname_kernel_release || 'default'
+		if(version) version.value = newValues.config_custom_uname_kernel_version || 'default'
+		if(digest) digest.value = newValues.config_spoof_verified_boot_hash || ''
+		toast('已恢复默认设置，重启后生效')
 	})
 })
 
@@ -396,7 +392,7 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 				${enable ? 'rm -f' : 'touch'} "$i/disable"
 			done
 		`).then((result) => {
-			toast(result.errno === 0 ? 'Success' : result.stderr)
+			toast(result.errno === 0 ? '保存成功' : result.stderr)
 		})
 	}
 
@@ -412,7 +408,7 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 	const updateUname = (release, version) => {
 		updateConfig2('config_custom_uname_kernel_release', release)
 		updateConfig2('config_custom_uname_kernel_version', version)
-		setFeature(`susfs set_uname "${release}" "${version}"`)
+		setFeature(`susfs set_uname ${shellQuote(release)} ${shellQuote(version)}`)
 	}
 
 	// Apply
@@ -436,13 +432,15 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 	const textField = document.getElementById('vbh_text_field')
 
 	button.addEventListener('click', () => {
-		updateConfig2('config_spoof_verified_boot_hash', textField.value)
+		const digest = textField.value.trim()
+  if (!/^[0-9a-fA-F]{64}$/.test(digest)) { toast('请输入 64 位十六进制哈希'); return }
+  updateConfig2('config_spoof_verified_boot_hash', digest)
 
-		exec(`resetprop -n ro.boot.vbmeta.digest ${textField.value}`).then((result) => {
+		exec(`resetprop -n ro.boot.vbmeta.digest ${shellQuote(digest)}`).then((result) => {
 			if (result.errno === 0) {
-				toast('No need to reboot')
+				toast('已应用，无需重启')
 			} else {
-				toast('Failed to update prop')
+				toast('更新系统属性失败')
 			}
 		})
 	})
@@ -528,18 +526,14 @@ exec(`cat ${PERSISTENT_DIR}/config.sh`).then((result) => {
 
 		if (file) {
 			if (content === '') {
-				exec(`printf '' > ${PERSISTENT_DIR}/${file}`).then((result) => {
-					toast(result.errno === 0 ? 'Success, reboot to apply' : result.stderr)
+				safeSaveTextFile(file, '').then((result) => {
+					toast(result.errno === 0 ? '保存成功，重启后生效' : result.stderr)
 				})
 			} else {
 				content = content.replaceAll('/sdcard', '/storage/emulated/0')
 
-				exec(`
-cat <<'UNIQUE_EOF' > ${PERSISTENT_DIR}/${file}
-${content}
-UNIQUE_EOF
-				`).then((result) => {
-					toast(result.errno === 0 ? 'Success, reboot to apply' : result.stderr)
+				safeSaveTextFile(file, content).then((result) => {
+					toast(result.errno === 0 ? '保存成功，重启后生效' : result.stderr)
 				})
 			}
 		}
@@ -562,116 +556,127 @@ UNIQUE_EOF
 
 		if (file) {
 			if (content === '') {
-				exec(`printf '' > ${PERSISTENT_DIR}/${file}`).then((result) => {
-					toast(result.errno === 0 ? 'Success' : result.stderr)
+				safeSaveTextFile(file, '').then((result) => {
+					toast(result.errno === 0 ? '保存成功' : result.stderr)
 				})
 			} else {
-				exec(`
-cat <<'UNIQUE_EOF' > ${PERSISTENT_DIR}/${file}
-${content}
-UNIQUE_EOF
-				`).then((result) => {
-					toast(result.errno === 0 ? 'Success' : result.stderr)
+				safeSaveTextFile(file, content).then((result) => {
+					toast(result.errno === 0 ? '保存成功' : result.stderr)
 				})
 			}
 		}
 	}
 })()
 
-// tabs.js — tab switching
-;(async () => {
-	var btns = document.querySelectorAll('.tab-btn')
-	var panels = document.querySelectorAll('.tab-panel')
+// Navigation is managed by navigation.js. Original panel IDs remain unchanged.
 
-	function activate(id) {
-		btns.forEach(function (b) {
-			b.classList.toggle('active', b.dataset.tab === id)
-		})
-		panels.forEach(function (p) {
-			p.classList.toggle('active', p.dataset.panel === id)
-		})
-	}
 
-	btns.forEach(function (btn) {
-		btn.addEventListener('click', function () {
-			activate(btn.dataset.tab)
-			try {
-				sessionStorage.setItem('brene_tab', btn.dataset.tab)
-			} catch (e) {}
-		})
-	})
+/* Mount manager — scoped, opt-in, not an init namespace umount. */
+const mountHideBase='/data/adb/modules/brene/mount-hide.sh';
+const mountHideStatus=document.getElementById('mount-hide-status');
+const mountHidePreview=document.getElementById('mount-hide-preview-output');
+async function refreshMountRules(){
+  if(!mountHideStatus)return;
+  try {
+    const r=await exec('sh '+mountHideBase+' report');
+    mountHideStatus.textContent=r.errno===0?r.stdout.trim():(r.stderr||'状态读取失败');
+  } catch(error){mountHideStatus.textContent=String(error)}
+}
+document.getElementById('mount-hide-preview')?.addEventListener('click',async()=>{
+  if(!mountHidePreview)return;
+  const r=await exec('sh '+mountHideBase+' preview');
+  mountHidePreview.textContent=r.errno!==0?'扫描失败：'+(r.stderr||'无法读取 init mountinfo'):(r.stdout.trim()||'没有发现 Lucky_Control 模块挂载');
+});
+document.getElementById('mount-hide-refresh')?.addEventListener('click',refreshMountRules);
+document.getElementById('mount-hide-apply')?.addEventListener('click',async()=>{
+  const r=await exec('sh '+mountHideBase+' apply');
+  toast(r.errno===0?'规则执行完成，请查看状态':'执行失败，请查看状态与日志');
+  await refreshMountRules();
+});
+refreshMountRules();
 
-	try {
-		var saved = sessionStorage.getItem('brene_tab')
-		if (saved) activate(saved)
-	} catch (e) {}
-})()
 
-// Swipe
-;(async () => {
-	const tabBar = document.getElementById('tab-bar')
-	const bodyContent = document
-	const buttons = Array.from(tabBar.querySelectorAll('button.tab-btn'))
-	const SWIPE_THRESHOLD = 10
-	let currentIndex = buttons.findIndex((btn) => btn.classList.contains('active')) || 0
-	let touchStartX = 0
-	let touchStartY = 0
+/* SuSFS management utilities: read-only capability audit and private snapshots. */
+const susfsToolRoot='/data/adb/modules/brene/tools/';
+const featureOutput=document.getElementById('brene-feature-audit');
+const snapshotStatus=document.getElementById('brene-snapshot-status');
+async function refreshFeatureAudit(){
+ if(!featureOutput)return;
+ const r=await exec('sh '+susfsToolRoot+'susfs-capability-audit.sh');
+ featureOutput.textContent=r.errno===0?r.stdout.trim():(r.stdout.trim()||r.stderr||'能力检测失败');
+}
+document.getElementById('brene-feature-refresh')?.addEventListener('click',refreshFeatureAudit);
+refreshFeatureAudit().catch(()=>{});
+document.getElementById('brene-snapshot-backup')?.addEventListener('click',async()=>{
+ const r=await exec('sh '+susfsToolRoot+'susfs-snapshot.sh backup');
+ if(snapshotStatus)snapshotStatus.textContent=r.errno===0?'已保存在 /data/adb/brene/snapshots/'+r.stdout.trim():(r.stderr||'备份失败');
+ toast(r.errno===0?'配置快照已建立':'配置快照失败');
+});
+document.getElementById('brene-snapshot-restore')?.addEventListener('click',async()=>{
+ const list=await exec('sh '+susfsToolRoot+'susfs-snapshot.sh list');
+ const id=(list.stdout||'').split(/\r?\n/).map(x=>x.trim()).find(x=>/^\d{8}_\d{6}(?:_\d+)?$/.test(x));
+ if(list.errno!==0||!id){
+  if(snapshotStatus)snapshotStatus.textContent='没有可恢复的本地快照';
+  return;
+ }
+ if(!window.confirm('恢复最新配置 '+id+'？BRENE 将先备份当前配置；恢复后需要重启。'))return;
+ const r=await exec('sh '+susfsToolRoot+'susfs-snapshot.sh restore '+id);
+ if(snapshotStatus)snapshotStatus.textContent=r.errno===0?r.stdout.trim():(r.stderr||'恢复失败');
+ toast(r.errno===0?'配置已恢复，请重启':'恢复失败');
+});
+const excludeField=document.getElementById('brene-mount-excludes');
+exec('cat /data/adb/brene/mount-hide-exclude.txt').then(r=>{
+ if(excludeField)excludeField.value=r.errno===0?r.stdout:'';
+}).catch(()=>{});
+document.getElementById('brene-mount-excludes-save')?.addEventListener('click',async()=>{
+ if(!excludeField)return;
+ const lines=excludeField.value.split(/\r?\n/);
+ if(lines.some(l=>l.trim()&&!l.startsWith('#')&&!/^\/[a-zA-Z0-9_./:+@=-]+$/.test(l))){
+  toast('排除规则只能是绝对路径、目录前缀或注释');
+  return;
+ }
+ const r=await safeSaveTextFile('mount-hide-exclude.txt',excludeField.value);
+ toast(r.errno===0?'排除规则已保存；下次应用时生效':(r.stderr||'保存失败'));
+});
 
-	const updateUI = (index) => {
-		buttons[index].click()
+/* Persisted Auto SuSFS lifecycle status (no manual action is required). */
+const autoProfileOutput=document.getElementById('brene-auto-profile');
+async function showAutoProfile(){
+ if(!autoProfileOutput)return;
+ const r=await exec('sh /data/adb/modules/brene/tools/susfs-auto.sh status');
+ autoProfileOutput.textContent=r.errno===0?r.stdout.trim():(r.stderr||'无法读取自动适配状态');
+}
+document.getElementById('brene-auto-profile-refresh')?.addEventListener('click',async()=>{
+ const r=await exec('sh /data/adb/modules/brene/tools/susfs-auto.sh probe');
+ toast(r.errno===0?'内核能力已重新探测并持久化':'自动探测失败，保留当前配置');
+ await showAutoProfile();
+});
+showAutoProfile().catch(()=>{});
 
-		buttons[index].scrollIntoView({
-			behavior: 'auto',
-			block: 'nearest',
-			inline: 'center',
-		})
-	}
 
-	const changeTab = (index) => {
-		if (index >= 0 && index < buttons.length) {
-			currentIndex = index
-			updateUI(index)
-		}
-	}
-
-	bodyContent.addEventListener(
-		'touchstart',
-		(e) => {
-			touchStartX = e.touches[0].clientX
-			touchStartY = e.touches[0].clientY
-		},
-		{ passive: true },
-	)
-
-	bodyContent.addEventListener(
-		'touchend',
-		(e) => {
-			if (e.target.closest('.tab-bar') === null) {
-				const touchEndX = e.changedTouches[0].clientX
-				const touchEndY = e.changedTouches[0].clientY
-
-				const diffX = touchStartX - touchEndX
-				const diffY = touchStartY - touchEndY
-
-				const isHorizontalSwipe = Math.abs(diffX) > SWIPE_THRESHOLD
-				const isDominantX = Math.abs(diffX) > Math.abs(diffY) * 3
-
-				if (isHorizontalSwipe && isDominantX) {
-					if (diffX > 0) {
-						changeTab(currentIndex + 1)
-					} else {
-						changeTab(currentIndex - 1)
-					}
-				}
-			}
-		},
-		{ passive: true },
-	)
-
-	tabBar.addEventListener('click', (e) => {
-		const btn = e.target.closest('.tab-btn')
-		if (btn) {
-			currentIndex = buttons.indexOf(btn)
-		}
-	})
-})()
+/* Verified binary update management. Buttons do not run arbitrary shell input. */
+const binaryUpdaterPath='/data/adb/modules/brene/tools/susfs-bin-manager.sh';
+const binaryStatusPanel=document.getElementById('brene-binary-status');
+async function showBinaryStatus(){
+ if(!binaryStatusPanel)return;
+ const r=await exec('sh '+binaryUpdaterPath+' status');
+ binaryStatusPanel.textContent=r.errno===0?r.stdout.trim():(r.stderr||'无法读取当前更新状态');
+}
+document.getElementById('brene-binary-check')?.addEventListener('click',async()=>{
+ const r=await exec('sh '+binaryUpdaterPath+' check');
+ toast(r.errno===0?'可信版本和内核接口校验成功':'在线检查失败，当前二进制未变化');
+ await showBinaryStatus();
+});
+document.getElementById('brene-binary-apply')?.addEventListener('click',async()=>{
+ if(!window.confirm('将验证受信任二进制，并在可兼容时替换系统共享工具。继续？'))return;
+ const r=await exec('sh '+binaryUpdaterPath+' manual-update');
+ toast(r.errno===0?'更新流程已完成，请查看状态':'更新被拒绝或失败，已保留原版本');
+ await showBinaryStatus();
+});
+document.getElementById('brene-binary-rollback')?.addEventListener('click',async()=>{
+ if(!window.confirm('恢复上一份二进制并暂停自动更新？操作完成后建议重启。'))return;
+ const r=await exec('sh '+binaryUpdaterPath+' rollback');
+ toast(r.errno===0?'已恢复上一份二进制，自动更新已暂停':'无可用回退文件或恢复失败');
+ await showBinaryStatus();
+});
+showBinaryStatus().catch(()=>{});

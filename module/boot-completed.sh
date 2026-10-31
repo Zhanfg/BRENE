@@ -13,17 +13,22 @@ CUSTOM_ROM_NAMES="lineage|infinity|evolution|crdroid|mistos|axion|pixelos|rising
 # Load config
 [[ -e "${PERSISTENT_DIR}/config.sh" ]] && source "${PERSISTENT_DIR}/config.sh"
 
+# Final capability recheck catches kernel/CLI changes across reboots.
+if [[ -f "${MODDIR}/tools/susfs-auto.sh" ]]; then
+    /system/bin/sh "${MODDIR}/tools/susfs-auto.sh" late >> "${PERSISTENT_DIR}/auto-boot.log" 2>&1
+fi
+
 update_config_date
 
 # Update Description
-susfs_total_features=9
+susfs_total_features="kernel-defined"
 susfs_version=$(${SUSFS_BIN} show version)
 susfs_features_number=$(${SUSFS_BIN} show enabled_features | wc -l)
 kernel_version=$(cat /proc/version | awk '{print $3}' | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+')
 description="KernelSU module with SuSFS support and more"
-if [[ "${susfs_version}" == "v2"* ]]; then
+if [[ "${susfs_version}" == "v2"* || "${susfs_version}" == "v3"* ]]; then
 	status="Active ✅"
-	${KSU_BIN} module config set override.description "[Status: ${status} | Kernel Version: ${kernel_version} | SuSFS: ${susfs_version} | SuSFS Kernel Features: ${susfs_features_number}/${susfs_total_features} enabled] ${description}"
+	${KSU_BIN} module config set override.description "[Status: ${status} | Kernel Version: ${kernel_version} | SuSFS: ${susfs_version} | SuSFS Kernel Features: ${susfs_features_number} enabled] ${description}"
 else
 	status="Not Working ❌"
 	${KSU_BIN} module config set override.description "[Status: ${status} | Kernel Version: ${kernel_version} | SuSFS: ${susfs_version} | SuSFS Kernel Features: ${susfs_features_number}/${susfs_total_features} enabled] ${description}"
@@ -163,7 +168,18 @@ fi
 
 #### Hide some sus paths, effective only for processes that are marked umounted with uid >= 10000 ####
 ## First we need to wait until files are accessible in /storage/emulated/0/Android ##
-until [[ -e "/storage/emulated/0/Android" ]]; do sleep 1; done
+# Never block ALL later SuSFS rules when credential-encrypted storage is locked.
+brene_storage_ready=0
+for _brene_wait in $(seq 1 12); do
+    if [[ -d "/storage/emulated/0/Android" ]]; then
+        brene_storage_ready=1
+        break
+    fi
+    sleep 1
+done
+if [[ "$brene_storage_ready" != 1 ]]; then
+    echo 'BRENE: shared storage unavailable; continuing without sdcard-specific rules' >> "${PERSISTENT_DIR}/logs.txt"
+fi
 
 ## System Property Spoofing
 # Spoof System Properties
@@ -423,6 +439,32 @@ if [[ "${config_fix_data_local_tmp_inconsistencies}" == "1" ]]; then
 	# ino -> %i, dev -> %d, nlink -> %h, atime -> %X, mtime -> %Y, ctime -> %Z, size -> %s, blocks -> %b, blksize -> %B
 	# Example: stat -c %i <path>
 	${SUSFS_BIN} add_sus_kstat_statically "${target_folder}" '100' 'default' 'default' '4096' 'default' 'default' 'default' 'default' 'default' 'default' '8' '4096'
+fi
+
+# Scoped KSU mount records: disabled by default; never unmount from init.
+if [[ -f "${MODDIR}/mount-hide.sh" ]]; then
+    /system/bin/sh "${MODDIR}/mount-hide.sh" apply >> "${PERSISTENT_DIR}/mount-hide-boot.log" 2>&1
+fi
+
+# AutoShield runs once in late boot when manually enabled. It scans only
+# installed module native libraries and never alters the legacy custom rules.
+if [[ -f "${MODDIR}/autoshield.sh" && "${config_auto_hide:-0}" == "1" ]]; then
+	/system/bin/sh "${MODDIR}/autoshield.sh" apply >> "${PERSISTENT_DIR}/autoshield-boot.log" 2>&1
+fi
+
+# Refresh previously registered dynamic KSTAT rules after module mounts.
+if [[ -f "${MODDIR}/kstat-rules.sh" ]]; then
+	/system/bin/sh "${MODDIR}/kstat-rules.sh" post
+	/system/bin/sh "${MODDIR}/kstat-rules.sh" static
+fi
+
+# Periodic pinned binary verification in a separate late-boot process.
+# It cannot block boot; digest + current kernel ABI must match before replacement.
+if [[ -f "${MODDIR}/tools/susfs-bin-manager.sh" ]]; then
+    (
+        /system/bin/sh "${MODDIR}/tools/susfs-bin-manager.sh" scheduled >> "${PERSISTENT_DIR}/binary-update-boot.log" 2>&1
+        /system/bin/sh "${MODDIR}/tools/susfs-auto.sh" late >> "${PERSISTENT_DIR}/auto-boot.log" 2>&1
+    ) &
 fi
 
 resetprop -c --force

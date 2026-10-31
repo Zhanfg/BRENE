@@ -37,27 +37,63 @@ if [[ ! -d "${DEST_BIN_DIR}" ]]; then
 	abort "[❌] '${DEST_BIN_DIR}' not existed, installation aborted!"
 fi
 
-cp -f "${MODPATH}/tools/susfs" "${DEST_BIN_DIR}"
-chmod +x "${MODPATH}/inotify.sh"
-chmod +x "${MODPATH}/remove_ksu_directory.sh"
-chmod 755 "${DEST_BIN_DIR}/susfs"
-ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/sus"       # For development
-ln -sf "${DEST_BIN_DIR}/susfs" "${DEST_BIN_DIR}/ksu_susfs" # For compatibility
-
-susfs_version=$(${SUSFS_BIN} show version)
-if [[ "${susfs_version}" == "v2"* ]]; then
-	echo "[✅] Detected SuSFS version: ${susfs_version}"
+# Select a pinned and validated online binary, or an offline compatible fallback.
+chmod 755 "$MODPATH/tools/susfs"
+mkdir -p "$PERSISTENT_DIR" || abort '[❌] Cannot prepare persistent directory'
+chmod 700 "$PERSISTENT_DIR" 2>/dev/null || :
+selected_bin=$(/system/bin/sh "$MODPATH/tools/susfs-bin-manager.sh" select "$MODPATH/tools/susfs") ||
+    abort '[❌] No compatible SuSFS binary available, shared binary unchanged'
+case "$selected_bin" in
+    "$PERSISTENT_DIR/susfs.selected"|"$MODPATH/tools/susfs"|"$DEST_BIN_DIR/susfs") ;;
+    *) abort '[❌] Invalid binary selector result' ;;
+esac
+[[ -f "$selected_bin" && ! -L "$selected_bin" ]] || abort '[❌] Selected binary unavailable'
+susfs_version=$("$selected_bin" show version 2>/dev/null)
+if [[ "$susfs_version" == "v2."* || "$susfs_version" == "v3."* ]]; then
+    echo "[✅] Selected compatible SuSFS userspace tool: $susfs_version"
 else
-	abort "[❌] Not supported SuSFS version ${susfs_version}!"
+    abort "[❌] Selected tool cannot communicate with the kernel: $susfs_version"
 fi
+# Save first foreign binary for uninstall and the immediate predecessor for rollback.
+if [[ -f "$DEST_BIN_DIR/susfs" && ! -f "$PERSISTENT_DIR/susfs.previous" ]]; then
+    if [[ -f "$PERSISTENT_DIR/susfs" ]] && cmp -s "$DEST_BIN_DIR/susfs" "$PERSISTENT_DIR/susfs"; then
+        echo '[ℹ️] Existing shared binary is managed by BRENE'
+    else
+        cp -pf "$DEST_BIN_DIR/susfs" "$PERSISTENT_DIR/susfs.previous" ||
+            abort '[❌] Failed to preserve pre-existing shared binary'
+    fi
+fi
+if [[ -f "$DEST_BIN_DIR/susfs" && ! -L "$DEST_BIN_DIR/susfs" ]] &&
+   ! cmp -s "$DEST_BIN_DIR/susfs" "$selected_bin"; then
+    cp -pf "$DEST_BIN_DIR/susfs" "$PERSISTENT_DIR/susfs.rollback" ||
+        abort '[❌] Failed to preserve last-good binary'
+fi
+# Staging in each destination directory makes each individual replacement atomic.
+cp -pf "$selected_bin" "$PERSISTENT_DIR/.susfs.new.$$" ||
+    abort '[❌] Failed to stage binary cache'
+chmod 755 "$PERSISTENT_DIR/.susfs.new.$$"
+mv -f "$PERSISTENT_DIR/.susfs.new.$$" "$PERSISTENT_DIR/susfs" ||
+    abort '[❌] Failed to cache BRENE selected binary'
+cp -pf "$selected_bin" "$DEST_BIN_DIR/.susfs.new.$$" ||
+    abort '[❌] Failed to stage shared SuSFS binary'
+chmod 755 "$DEST_BIN_DIR/.susfs.new.$$"
+mv -f "$DEST_BIN_DIR/.susfs.new.$$" "$DEST_BIN_DIR/susfs" ||
+    abort '[❌] Failed to install shared SuSFS binary'
+[[ "$("$DEST_BIN_DIR/susfs" show version 2>/dev/null)" == "$susfs_version" ]] || {
+    [[ ! -f "$PERSISTENT_DIR/susfs.rollback" ]] || cp -pf "$PERSISTENT_DIR/susfs.rollback" "$DEST_BIN_DIR/susfs"
+    abort '[❌] Installed binary validation failed, rollback attempted'
+}
+chmod +x "$MODPATH/inotify.sh" "$MODPATH/remove_ksu_directory.sh" "$MODPATH/kstat-rules.sh" "$MODPATH/autoshield.sh" "$MODPATH/mount-hide.sh" "$MODPATH/tools/susfs-auto.sh" "$MODPATH/tools/susfs-bin-manager.sh" "$MODPATH/post-mount.sh"
+ln -sf "$DEST_BIN_DIR/susfs" "$DEST_BIN_DIR/sus"
+ln -sf "$DEST_BIN_DIR/susfs" "$DEST_BIN_DIR/ksu_susfs"
 
 # Reset module description
-susfs_total_features=9
+susfs_total_features="kernel-defined"
 susfs_features_number=$(${SUSFS_BIN} show enabled_features | wc -l)
 kernel_version=$(cat /proc/version | awk '{print $3}' | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+')
 description="KernelSU module with SuSFS support and more"
 status="Waiting for reboot ⏱️"
-${KSU_BIN} module config set override.description "[Status: ${status} | Kernel Version: ${kernel_version} | SuSFS: ${susfs_version} | SuSFS Kernel Features: ${susfs_features_number}/${susfs_total_features} enabled] ${description}"
+${KSU_BIN} module config set override.description "[Status: ${status} | Kernel Version: ${kernel_version} | SuSFS: ${susfs_version} | SuSFS Kernel Features: ${susfs_features_number} enabled] ${description}"
 
 # Disable other SuSFS modules
 [[ -e "${KSU_MODULES_DIR}/susfs4ksu" ]] && {
@@ -70,15 +106,16 @@ ${KSU_BIN} module config set override.description "[Status: ${status} | Kernel V
 echo "[✅] Preparing brene persistent directory (${PERSISTENT_DIR})"
 mkdir -p "${PERSISTENT_DIR}"
 
-# Backup SuSFS binary
-cp -pf "${DEST_BIN_DIR}/susfs" "${PERSISTENT_DIR}"
-
 files="
 custom_sus_map.txt
 custom_kernel_umount.txt
 custom_sus_path.txt
 custom_sus_path_loop.txt
 custom_open_redirect.txt
+custom_sus_kstat.txt
+custom_static_kstat.txt
+custom_cmdline.txt
+custom_bootconfig.txt
 "
 for file in ${files}; do
 	if [[ ! -f "${PERSISTENT_DIR}/${file}" ]]; then
@@ -102,6 +139,14 @@ else
 		fi
 
 	done < "${MODPATH}/config.sh"
+fi
+
+# Persist the capability profile during installation, before first reboot.
+# Existing user configuration is not overwritten.
+if BRENE_AUTO_INSTALL_BIN="${PERSISTENT_DIR}/susfs" /system/bin/sh "${MODPATH}/tools/susfs-auto.sh" install; then
+    echo '[✅] SuSFS capability profile persisted; boot-time recheck enabled'
+else
+    echo '[⚠️] Auto-probe deferred to boot; user settings preserved'
 fi
 
 update_config_date

@@ -9,9 +9,18 @@ config_su_compat=1
 config_spoof_uname=1
 config_selinux_hide=1
 config_kernel_umount=1
-config_shrink_buffer_size=1
+# Detect the kernel automatically without overriding user toggles.
+config_susfs_auto_enable=1
+# Install-time online binary retrieval; verified SHA-256 pinned to source revision.
+config_susfs_binary_auto_update=1
+# Opt-in because per-fork unmount may remove module functionality.
+config_mount_hide_auto_bind=0
+config_mount_hide_sysfs=0
+config_mount_hide_max_rules=512
+# Preserve boot diagnostics: only shrink logcat buffer when explicitly enabled.
+config_shrink_buffer_size=0
 config_hide_custom_recovery=1
-config_hide_ksu_directories=1
+config_hide_ksu_directories=0
 config_enable_avc_log_spoofing=1
 config_hide_sus_mnts_for_non_su_procs=1
 config_fix_data_local_tmp_inconsistencies=1
@@ -42,6 +51,9 @@ config_hide_custom_rom_paths=0
 config_hide_custom_rom_paths_2=0
 config_hide_framework_res_apk=0
 config_spoof_cmdline_or_bootconfig=0
+config_use_custom_cmdline_or_bootconfig=0
+# AutoShield: local Zygisk map discovery; opt-in, no directory deletion
+config_auto_hide=0
 
 config_spoof_verified_boot_hash=''
 config_custom_uname_kernel_release='default'

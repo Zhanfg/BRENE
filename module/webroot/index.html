@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 		<title>BRENE</title>
 		<link rel="stylesheet" href="./styles.css" type="text/css" />
+		<link rel="stylesheet" href="./modern.css" type="text/css" />
 	</head>
 
 	<body class="body-content">
@@ -24,20 +25,32 @@
 			</div>
 		</header>
 
-		<nav class="tab-bar" id="tab-bar">
-			<button class="tab-btn active" data-tab="home">Home</button>
-			<button class="tab-btn" data-tab="android">Android</button>
-			<button class="tab-btn" data-tab="hiding">Hiding</button>
-			<button class="tab-btn" data-tab="spoofing">Spoofing</button>
-			<button class="tab-btn" data-tab="susfs">SuSFS</button>
-			<button class="tab-btn" data-tab="ksu">KSU</button>
-			<button class="tab-btn" data-tab="rom">ROM</button>
-			<button class="tab-btn" data-tab="advanced">Advanced</button>
-			<button class="tab-btn" data-tab="info">Info</button>
-		</nav>
+		<nav class="tab-bar" id="tab-bar" aria-label="主导航">
+  <button type="button" class="dock-btn active" data-group="overview" aria-label="概览" aria-current="page"><span class="dock-glyph"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21h-6v-7H9v7H3z"/></svg></span><span class="dock-label">概览</span></button>
+  <button type="button" class="dock-btn" data-group="privacy" aria-label="隐藏"><span class="dock-glyph"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3 8.5 8 11 5-2.5 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="dock-label">隐藏</span></button>
+  <button type="button" class="dock-btn" data-group="kernel" aria-label="内核"><span class="dock-glyph"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4M2 15h4m12-6h4m-4 6h4"/></svg></span><span class="dock-label">内核</span></button>
+  <button type="button" class="dock-btn" data-group="tools" aria-label="设置"><span class="dock-glyph"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M9 4v6M15 14v6"/></svg></span><span class="dock-label">设置</span></button>
+  <button type="button" class="dock-btn" data-group="diagnostics" aria-label="诊断"><span class="dock-glyph"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8m-8 4h8m-8 4h5"/></svg></span><span class="dock-label">诊断</span></button>
+</nav>
+		<nav class="subnav" id="subnav" aria-label="当前分类" hidden></nav>
+
 
 		<div class="preload-hidden">
 			<section class="tab-panel active" data-panel="home">
+  <div class="brene-panel-card" id="brene-shortcuts">
+    <h3>功能直达</h3>
+    <p class="brene-helper">按功能分类快速进入，不必逐页寻找开关。</p>
+    <div class="brene-jump-grid">
+      <button type="button" data-open-panel="hiding">路径隐藏</button>
+      <button type="button" data-open-panel="spoofing">信息伪装</button>
+      <button type="button" data-open-panel="susfs" data-open-anchor="brene-mount-control">挂载管理</button>
+      <button type="button" data-open-panel="susfs" data-open-anchor="brene-auto-scan">AutoShield</button>
+      <button type="button" data-open-panel="ksu" data-open-anchor="brene-kernel-umount-entry">KernelSU 卸载</button>
+      <button type="button" data-open-panel="rom">ROM 适配</button>
+      <button type="button" data-open-panel="advanced">高级设置</button>
+      <button type="button" data-open-panel="info">诊断与日志</button>
+    </div>
+  </div>
 				<p class="section-label">General</p>
 				<div class="card-group">
 					<div class="card-row" id="device-model">
@@ -452,6 +465,81 @@
 			</section>
 
 			<section class="tab-panel" data-panel="susfs">
+  <div class="brene-panel-card" id="brene-binary-manager">
+  <h3>SuSFS 二进制更新</h3>
+  <p class="brene-helper">安装时自动检查可信上游固定版本；下载的 ARM64 程序必须通过 SHA-256、ELF 类型和当前内核接口验证。未验证的远程版本不会被执行或覆盖到系统。每次开机还会按间隔检查。</p>
+  <div class="card-row">
+    <div class="card-row__body">
+      <span class="card-row__title">自动检查及安全更新</span>
+      <span class="card-row__sub">离线安装仍可用；回滚时自动暂停后续更新。</span>
+    </div>
+    <md-switch icons id="susfs_binary_auto_update"></md-switch>
+  </div>
+  <pre id="brene-binary-status" class="brene-mount-preview" role="status">正在读取二进制更新状态…</pre>
+  <div class="brene-mount-actions">
+    <button class="brene-secondary-action" id="brene-binary-check" type="button">检查可信版本</button>
+    <button class="brene-secondary-action" id="brene-binary-apply" type="button">立即更新</button>
+    <button class="brene-secondary-action" id="brene-binary-rollback" type="button">恢复上一版本</button>
+  </div>
+</div>
+<div class="brene-panel-card" id="brene-auto-profile-card">
+  <h3>自动内核适配</h3>
+  <p class="brene-helper">安装时自动识别，早期启动自动应用安全能力，并在模块挂载完成、开机结束后复核。配置与能力档案保存在 /data/adb/brene，不会覆盖你的自定义设置。</p>
+  <div class="card-row">
+    <div class="card-row__body"><span class="card-row__title">自动适配（默认开启）</span>
+    <span class="card-row__sub">关闭后不再自动调整 SuSFS Mount 视图；其他开关仍保留原来的用户设置。</span></div>
+    <md-switch icons id="susfs_auto_enable"></md-switch>
+  </div>
+  <pre id="brene-auto-profile" class="brene-mount-preview" role="status">正在读取已保存的内核能力档案…</pre>
+  <button type="button" class="brene-secondary-action" id="brene-auto-profile-refresh">重新探测并保存</button>
+  <p class="brene-helper">当前仅自动应用内核明确支持的非 SU Mount 视图隐藏。默认不执行 GPU、相机、温控等模块的强制卸载。</p>
+</div>
+<div class="brene-panel-card" id="brene-susfs-tools">
+ <h3>SuSFS 能力与配置管理</h3>
+ <p class="brene-helper">实时读取内核报告，不将未编译的内核功能伪装成可启用开关。</p>
+ <button class="brene-secondary-action" type="button" id="brene-feature-refresh">刷新内核能力</button>
+ <pre class="brene-mount-preview" id="brene-feature-audit">正在读取内核能力…</pre>
+ <h4>配置快照</h4>
+ <p class="brene-helper">仅备份当前 BRENE 的白名单配置文件，存放在本机 Root 私有目录，不自动上传。恢复前再次备份当前设置。</p>
+ <div class="brene-mount-actions">
+  <button class="brene-secondary-action" type="button" id="brene-snapshot-backup">备份当前配置</button>
+  <button class="brene-secondary-action" type="button" id="brene-snapshot-restore">恢复最新备份</button>
+ </div>
+ <div id="brene-snapshot-status" role="status" class="brene-status">没有执行备份操作</div>
+</div>
+<div class="brene-panel-card" id="brene-mount-control">
+    <h3>挂载管理 · Mount</h3>
+    <p class="brene-helper">当前内核的 SuSFS 挂载视图隐藏由下方原生开关控制。自动 KernelSU Umount 规则是独立功能，可能导致目标进程无法访问模块文件，默认关闭。</p>
+    <div class="card-row">
+      <div class="card-row__body">
+        <span class="card-row__title">自动收集 Lucky_Control 挂载</span>
+        <span class="card-row__sub">只扫描报告涉及的模块，生成后续隔离进程的卸载候选；不会卸载当前全局挂载。</span>
+      </div>
+      <md-switch icons id="mount_hide_auto_bind"></md-switch>
+    </div>
+    <div class="card-row">
+      <div class="card-row__body">
+        <span class="card-row__title">额外包括热管理节点（危险）</span>
+        <span class="card-row__sub">默认排除 /sys/class/thermal，避免破坏温度监测。仅在明确了解后果时开启。</span>
+      </div>
+      <md-switch icons id="mount_hide_sysfs"></md-switch>
+    </div>
+    <div class="brene-mount-actions">
+      <button type="button" class="brene-secondary-action" id="mount-hide-preview">预览候选</button>
+      <button type="button" class="brene-secondary-action" id="mount-hide-apply">应用规则</button>
+      <button type="button" class="brene-secondary-action" id="mount-hide-refresh">刷新状态</button>
+    </div>
+    <div class="brene-kstat">
+ <strong>挂载排除规则</strong>
+ <p class="brene-helper">每行一个绝对目标路径，末尾 / 表示排除整个目录；不会修改原始文件。将必须保留的相机与温控挂载加入排除。</p>
+ <textarea id="brene-mount-excludes" rows="5" class="brene-mount-preview" placeholder="/vendor/etc/camera/"></textarea>
+ <button type="button" class="brene-secondary-action" id="brene-mount-excludes-save">保存排除规则</button>
+</div>
+<div id="mount-hide-status" class="brene-status" role="status">尚未应用</div>
+    <pre id="mount-hide-preview-output" class="brene-mount-preview">点击预览候选以查看具体路径</pre>
+    <p class="brene-helper">规则只作用于 KernelSU 标记卸载的后续进程，不保证 Android 17 的 zygote_next 隔离服务全部隐藏。关闭自动收集后需重启以清除已注册的内核规则。</p>
+  </div>
+
 				<p class="section-label">Status</p>
 				<div class="card-group">
 					<div class="card-row" id="susfs-variant">
@@ -637,6 +725,54 @@
 						</div>
 					</div>
 				</div>
+				<p class="section-label">AutoShield · 自动规则管理</p>
+				<div class="brene-kstat" id="brene-autoshield-panel">
+					<strong>自动发现模块映射路径</strong>
+					<span>扫描已启用模块中 Zygisk 的原生 .so 文件，生成 SUS_MAP 候选清单。默认只预览，不隐藏，不删除文件。开启自动应用后，每次启动仅尝试应用内核支持的规则。</span>
+					<div id="brene-auto-status" class="brene-status" role="status">正在读取 AutoShield 状态…</div>
+					<pre id="brene-auto-candidates" class="mono-block enabled-config">尚未扫描</pre>
+					<div class="brene-autoshield-actions">
+						<button type="button" id="brene-auto-scan">扫描与预览</button>
+						<button type="button" id="brene-auto-enable">启用并应用</button>
+						<button type="button" id="brene-auto-disable">关闭自动应用</button>
+					</div>
+					<span>仅对符合条件的映射文件生成规则；并不保证所有模块痕迹都能隐藏。关闭后不再自动添加规则，已有内核规则必须重启才能清除。</span>
+				</div>
+				<p class="section-label">SUS_KSTAT · Advanced</p>
+				<div class="brene-kstat">
+					<strong>动态 KSTAT 规则 / Dynamic KSTAT</strong>
+					<span>每行一条：/system/etc/hosts|update 或 /system/etc/hosts|clone。仅在内核启用 SUS_KSTAT 时写入；重启生效。首次记录在 early boot，更新在 boot-completed，因此无法覆盖更早发生的挂载操作。</span>
+					<label for="brene-kstat-rules">规则列表 / Rules</label>
+					<textarea id="brene-kstat-rules" spellcheck="false" placeholder="/system/etc/hosts|update"></textarea>
+					<div id="brene-kstat-status" class="brene-status" role="status">Checking kernel support…</div>
+					<button id="brene-kstat-save" type="button" disabled>保存规则 / Save</button>
+				</div>
+				<p class="section-label">静态 KSTAT / Static KSTAT</p>
+				<div class="brene-kstat">
+					<strong>12 字段文件元数据规则</strong>
+					<span>每行 13 项，以 | 分隔：绝对路径、ino、dev、nlink、size、atime、atime_nsec、mtime、mtime_nsec、ctime、ctime_nsec、blocks、blksize。值为非负整数或 default。仅在重启后、已存在的文件上应用。</span>
+					<label for="brene-static-kstat-rules">静态规则 / Static rules</label>
+					<textarea id="brene-static-kstat-rules" spellcheck="false" placeholder="/system/etc/hosts|default|default|default|default|default|default|default|default|default|default|default|default"></textarea>
+					<div id="brene-static-kstat-status" class="brene-status" role="status">Checking kernel support…</div>
+					<button id="brene-static-kstat-save" type="button" disabled>保存静态规则 / Save</button>
+				</div>
+				<p class="section-label">Cmdline / Bootconfig</p>
+				<div class="brene-kstat">
+					<strong>自定义启动参数视图 / Custom boot arguments</strong>
+					<span>高级功能：完整替代内容，不是增量参数。必须同时开启上方原有“Cmdline/Bootconfig spoofing”及下面的自定义开关；两者默认关闭。不要删除未知参数。</span>
+					<div class="card-row"><div class="card-row__body">
+						<span class="card-row__title">启用自定义内容 / Enable full-file override</span>
+					</div><md-switch icons id="use_custom_cmdline_or_bootconfig"></md-switch></div>
+					<label for="brene-boot-payload">替代内容 / Replacement content</label>
+					<textarea id="brene-boot-payload" spellcheck="false" placeholder="建议先复制设备当前 /proc/cmdline 或 /proc/bootconfig 的内容"></textarea>
+					<div id="brene-boot-status" class="brene-status" role="status">Checking kernel support…</div>
+					<button id="brene-boot-save" type="button" disabled>保存启动参数 / Save</button>
+				</div>
+				<p class="section-label">内核功能矩阵 / Kernel features</p>
+				<div class="brene-kstat">
+					<div id="brene-feature-matrix" class="brene-status" role="status">正在查询内核功能…</div>
+					<span>“已编译”仅来自内核报告，不代表规则已经生效，也不代表设备通过完整性验证。</span>
+				</div>
 			</section>
 
 			<section class="tab-panel" data-panel="rom">
@@ -764,6 +900,7 @@
 			</section>
 
 			<section class="tab-panel" data-panel="ksu">
+  <span id="brene-kernel-umount-entry" class="brene-anchor"></span>
 				<p class="section-label">Module Control</p>
 				<div class="card-group">
 					<div class="field-stack">
@@ -829,28 +966,40 @@
 			</section>
 
 			<section class="tab-panel" data-panel="info">
-				<p class="section-label">Suspicious Mounts</p>
-				<div class="card-group">
-					<div class="mono-block enabled-config" id="suspicious_mounts"></div>
+				<header class="diagnostics-heading">
+					<h2>运行诊断</h2>
+					<p>只读检查当前环境；不会修改挂载或内核状态。</p>
+				</header>
+				<div class="brene-panel-card" id="mount-diagnostics">
+					<div class="brene-card-heading"><h3>挂载来源与异常线索</h3><span class="brene-source-label">init · /proc/1/mountinfo</span></div>
+					<p class="brene-helper">这里检查可见挂载标记与 overlayfs。即使显示“无命中”，也不代表 DuckDetector 的独立进程检测通过。</p>
+					<div id="mount_summary" role="status" class="brene-summary">正在读取挂载信息…</div>
+					<pre class="brene-diagnostic-detail" id="suspicious_mounts">等待结果…</pre>
 				</div>
-
-				<p class="section-label">BRENE Logs</p>
-				<div class="card-group">
-					<div class="card-row">
-						<div class="card-row__body">
-							<span class="card-row__title">BRENE Logs</span>
-							<span class="card-row__sub">Enable or disable BRENE Logs</span>
-						</div>
-						<md-switch icons id="brene_logs"></md-switch>
-						<md-ripple></md-ripple>
+				<div class="brene-panel-card" id="log-panel">
+					<div class="brene-card-heading">
+						<div><h3>BRENE 运行日志</h3><p class="brene-helper">查看启动及规则应用记录</p></div>
+						<md-switch icons id="brene_logs" aria-label="开启 BRENE 日志"></md-switch>
 					</div>
+					<div class="brene-log-content"><pre id="logs" role="log" aria-live="polite">正在读取日志…</pre></div>
 				</div>
-				<div class="card-group">
-					<div class="mono-block enabled-config" id="logs"></div>
+				<div class="brene-panel-card" id="duck-diagnostics">
+					<div class="brene-card-heading"><h3>DuckDetector 核对</h3></div>
+					<p class="brene-helper">此前报告的 Mount/Memory 警告尚未消除或复测。可生成设备证据文件，比较异常是否来自真实挂载或共享内存统计。</p>
+					<button class="brene-secondary-action" id="duck-audit-button" type="button">生成只读检测报告</button>
+					<button class="brene-secondary-action" id="duck-watch-button" type="button">启动 90 秒进程捕获</button>
+					<p class="brene-helper">先点捕获，然后切换到鸭子检测器运行 Memory/Mount 扫描。BRENE 只采集一次，结束后回到这里查看状态。</p>
+					<p class="brene-helper" id="duck-watch-status" role="status">未启动监听</p>
+					<p class="brene-helper" id="duck-audit-status" role="status">报告仅保存在本机 Download，不上传网络。</p>
 				</div>
 			</section>
 		</div>
 
 		<script type="module" src="./script.js"></script>
+		<script type="module" src="./navigation.js"></script>
+		<script type="module" src="./diagnostics.js"></script>
+		<script type="module" src="./kstat-ui.js"></script>
+		<script type="module" src="./autoshield-ui.js"></script>
+		<script type="module" src="./locale.js"></script>
 	</body>
 </html>
