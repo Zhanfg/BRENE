@@ -16,6 +16,24 @@ fi
 : "${config_mount_hide_auto_bind:=0}"
 : "${config_mount_hide_sysfs:=0}"
 : "${config_mount_hide_max_rules:=512}"
+EXCLUDES="$BASE/mount-hide-exclude.txt"
+# Allow exact paths and literal directory prefixes ending in '/'.
+excluded() {
+  target=$1
+  [ -f "$EXCLUDES" ] && [ ! -L "$EXCLUDES" ] || return 1
+  while IFS= read -r entry || [ -n "$entry" ]; do
+    case "$entry" in
+      ''|\#*) continue ;;
+      /*) ;;
+      *) continue ;;
+    esac
+    if [ "$entry" = "$target" ]; then return 0; fi
+    case "$entry" in
+      */) case "$target" in "$entry"*) return 0;; esac ;;
+    esac
+  done < "$EXCLUDES"
+  return 1
+}
 STATUS="$BASE/mount-hide.status"
 LOG="$BASE/mount-hide.log"
 APPLIED="$BASE/mount-hide.applied"
@@ -36,6 +54,14 @@ collect(){
 }
 case "${1:-report}" in
   collect) collect ;;
+  preview)
+    collect | while IFS='|' read -r path category; do
+      if excluded "$path"; then printf '[排除] %s\n' "$path"
+      elif [ "$category" = thermal ] && [ "$config_mount_hide_sysfs" != 1 ]; then
+        printf '[温控保护] %s\n' "$path"
+      else printf '[候选] %s\n' "$path"; fi
+    done
+    ;;
   report)
     [ -r "$STATUS" ] && cat "$STATUS" || printf '%s\n' '尚未执行'
     printf '自动规则=%s 温控路径=%s 内核卸载=%s\n' "$config_mount_hide_auto_bind" "$config_mount_hide_sysfs" "$config_kernel_umount"
@@ -66,6 +92,7 @@ case "${1:-report}" in
       count=$((count+1))
       if [ "$count" -gt "$config_mount_hide_max_rules" ]; then skipped=$((skipped+1)); continue; fi
       if [ "$category" = thermal ] && [ "$config_mount_hide_sysfs" != 1 ]; then skipped=$((skipped+1)); continue; fi
+      if excluded "$path"; then skipped=$((skipped+1)); log "EXCLUDED: $path"; continue; fi
       case "$path" in
         /*) ;;
         *) skipped=$((skipped+1)); continue;;
@@ -83,5 +110,5 @@ case "${1:-report}" in
     status "候选=$count 新注册=$registered 已有=$existing 排除=$skipped 失败=$failed（仅影响后续标记卸载的进程）"
     [ "$failed" -eq 0 ]
     ;;
-  *) echo 'Usage: mount-hide.sh collect|report|apply' >&2; exit 2;;
+  *) echo 'Usage: mount-hide.sh collect|preview|report|apply' >&2; exit 2;;
 esac
