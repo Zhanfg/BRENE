@@ -29,4 +29,14 @@ grep -q 'kernel umount add -f 2 /system_ext/etc/horae/horae.conf' "$work/calls"
 ! grep -q 'eglSubDriver' "$work/calls"
 env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BRENE_TEST_MOUNTINFO="$work/mountinfo" sh module/mount-hide.sh apply
 [ "$(grep -c 'kernel umount add' "$work/calls")" -eq 1 ]
+# User allowlist: exact path must be excluded even when auto-unmount is enabled.
+printf '%s\n' '/system_ext/etc/horae/horae.conf' > "$work/state/mount-hide-exclude.txt"
+rm -f "$work/state/mount-hide.applied" "$work/calls"
+env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BRENE_TEST_MOUNTINFO="$work/mountinfo" sh module/mount-hide.sh preview > "$work/preview"
+grep -q '^\[排除\] /system_ext/etc/horae/horae.conf
+ "$work/preview"
+env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BRENE_TEST_MOUNTINFO="$work/mountinfo" sh module/mount-hide.sh apply
+if [ -f "$work/calls" ] && grep -q 'kernel umount add' "$work/calls"; then
+ echo 'excluded mount was registered' >&2; exit 1
+fi
 echo 'PASS: scoped mounts, default safety, dedup and thermal exclusion'
