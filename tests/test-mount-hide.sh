@@ -33,8 +33,7 @@ env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BR
 printf '%s\n' '/system_ext/etc/horae/horae.conf' > "$work/state/mount-hide-exclude.txt"
 rm -f "$work/state/mount-hide.applied" "$work/calls"
 env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BRENE_TEST_MOUNTINFO="$work/mountinfo" sh module/mount-hide.sh preview > "$work/preview"
-grep -q '^\[排除\] /system_ext/etc/horae/horae.conf
- "$work/preview"
+grep -Fq '[排除] /system_ext/etc/horae/horae.conf' "$work/preview"
 env BRENE_TESTING=1 BRENE_TEST_BASE="$work/state" BRENE_TEST_KSU="$work/ksud" BRENE_TEST_MOUNTINFO="$work/mountinfo" sh module/mount-hide.sh apply
 if [ -f "$work/calls" ] && grep -q 'kernel umount add' "$work/calls"; then
  echo 'excluded mount was registered' >&2; exit 1
